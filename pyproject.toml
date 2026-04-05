@@ -30,5 +30,5 @@ dependencies = [
 [project.urls]
 Homepage = "https://prop-line.com"
 Documentation = "https://prop-line.com/docs"
-Repository = "https://github.com/andyt338/propline-python"
+Repository = "https://github.com/proplineapi/propline-python"
 "API Reference" = "https://api.prop-line.com/docs"

@@ -1,0 +1,34 @@
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "propline"
+version = "0.1.0"
+description = "Python SDK for the PropLine player props betting odds API"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.8"
+authors = [{name = "PropLine", email = "support@prop-line.com"}]
+keywords = ["sports", "betting", "odds", "player-props", "api", "sportsbook", "mlb", "nba", "nhl", "nfl"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries",
+]
+dependencies = [
+    "httpx>=0.24.0",
+]
+
+[project.urls]
+Homepage = "https://prop-line.com"
+Documentation = "https://prop-line.com/docs"
+Repository = "https://github.com/andyt338/propline-python"
+"API Reference" = "https://api.prop-line.com/docs"

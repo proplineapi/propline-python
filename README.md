@@ -47,6 +47,10 @@ for bookmaker in odds["bookmakers"]:
 |-----|-------|
 | `baseball_mlb` | MLB |
 | `basketball_nba` | NBA |
+| `basketball_ncaab` | College Basketball |
+| `football_ncaaf` | College Football |
+| `golf` | Golf |
+| `tennis` | Tennis |
 | `hockey_nhl` | NHL |
 | `football_nfl` | NFL |
 

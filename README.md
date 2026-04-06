@@ -86,6 +86,33 @@ for event in events:
                     print(f"  {o['description']} {o['name']} {o['point']}: {o['price']}")
 ```
 
+### Get game scores
+
+```python
+scores = client.get_scores("baseball_mlb")
+for game in scores:
+    if game["status"] == "final":
+        print(f"{game['away_team']} {game['away_score']}, "
+              f"{game['home_team']} {game['home_score']}")
+```
+
+### Get resolved prop outcomes (Pro only)
+
+```python
+results = client.get_results("baseball_mlb", event_id=16,
+    markets=["pitcher_strikeouts", "batter_hits"])
+
+print(f"{results['away_team']} {results['away_score']}, "
+      f"{results['home_team']} {results['home_score']}")
+
+for market in results["markets"]:
+    for outcome in market["outcomes"]:
+        print(f"{outcome['description']} {outcome['name']} "
+              f"{outcome['point']}: {outcome['resolution']} "
+              f"(actual: {outcome['actual_value']})")
+# Output: "Tarik Skubal (DET) Over 6.5: won (actual: 7.0)"
+```
+
 ### Get historical line movement (Pro only)
 
 ```python

@@ -190,6 +190,76 @@ class PropLine:
             "GET", f"/sports/{sport}/events/{event_id}/odds/history", params=params
         )
 
+    def get_scores(
+        self,
+        sport: str,
+        days_from: int = 3,
+    ) -> list[dict]:
+        """
+        Get game scores and status for recent events.
+
+        Args:
+            sport: Sport key (e.g. "baseball_mlb")
+            days_from: Number of days back to include (default: 3)
+
+        Returns:
+            List of score dicts with keys: id, sport_key, home_team, away_team,
+            commence_time, status (upcoming/in_progress/final), home_score, away_score
+
+        Example:
+            >>> scores = client.get_scores("baseball_mlb")
+            >>> for game in scores:
+            ...     if game["status"] == "final":
+            ...         print(f"{game['away_team']} {game['away_score']}, "
+            ...               f"{game['home_team']} {game['home_score']}")
+        """
+        return self._request(
+            "GET", f"/sports/{sport}/scores", params={"days_from": days_from}
+        )
+
+    def get_results(
+        self,
+        sport: str,
+        event_id: int | str,
+        markets: list[str] | None = None,
+    ) -> dict:
+        """
+        Get resolved prop outcomes with actual player stats (Pro tier only).
+
+        Returns each outcome with resolution (won/lost/push/void) and the
+        actual stat value that determined the result.
+
+        Args:
+            sport: Sport key
+            event_id: Event ID
+            markets: Optional list of market keys to filter by
+
+        Returns:
+            Event dict with status, scores, and markets containing resolved
+            outcomes with resolution, actual_value, and resolved_at fields.
+
+        Raises:
+            PropLineError: 403 if not on Pro tier
+
+        Example:
+            >>> results = client.get_results("baseball_mlb", event_id=16,
+            ...     markets=["pitcher_strikeouts", "batter_hits"])
+            >>> print(f"{results['away_team']} {results['away_score']}, "
+            ...       f"{results['home_team']} {results['home_score']}")
+            >>> for market in results["markets"]:
+            ...     for outcome in market["outcomes"]:
+            ...         print(f"{outcome['description']} {outcome['name']} "
+            ...               f"{outcome['point']}: {outcome['resolution']} "
+            ...               f"(actual: {outcome['actual_value']})")
+        """
+        params = {}
+        if markets:
+            params["markets"] = ",".join(markets)
+
+        return self._request(
+            "GET", f"/sports/{sport}/events/{event_id}/results", params=params
+        )
+
     def close(self):
         """Close the HTTP client."""
         self._client.close()

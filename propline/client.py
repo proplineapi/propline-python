@@ -152,6 +152,28 @@ class PropLine:
         else:
             return self._request("GET", f"/sports/{sport}/odds", params=params)
 
+    def get_markets(self, sport: str, event_id: int | str) -> list[dict]:
+        """
+        List available market types for a specific event.
+
+        Useful for discovering what props are available before requesting odds.
+
+        Args:
+            sport: Sport key (e.g. "baseball_mlb")
+            event_id: Event ID
+
+        Returns:
+            List of dicts with keys: key (market key), outcomes_count (number of outcomes)
+
+        Example:
+            >>> markets = client.get_markets("baseball_mlb", event_id=51)
+            >>> for m in markets:
+            ...     print(f"{m['key']}: {m['outcomes_count']} outcomes")
+            # pitcher_strikeouts: 4 outcomes
+            # batter_hits: 36 outcomes
+        """
+        return self._request("GET", f"/sports/{sport}/events/{event_id}/markets")
+
     def get_odds_history(
         self,
         sport: str,

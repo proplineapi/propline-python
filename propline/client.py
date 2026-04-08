@@ -239,6 +239,46 @@ class PropLine:
             "GET", f"/sports/{sport}/scores", params={"days_from": days_from}
         )
 
+    def get_stats(
+        self,
+        sport: str,
+        event_id: int | str,
+        stat_type: list[str] | None = None,
+    ) -> dict:
+        """
+        Get actual player/team stats from box scores (book-agnostic).
+
+        Returns raw stat values that can be used to resolve props against
+        any sportsbook's lines — not tied to any specific book.
+
+        Args:
+            sport: Sport key (e.g. "soccer_epl", "baseball_mlb")
+            event_id: Event ID
+            stat_type: Optional list of stat types to filter by.
+                Common types:
+                - MLB: "strikeouts", "hits", "home_runs", "total_bases", "rbis"
+                - NBA: "points", "rebounds", "assists", "threes", "steals"
+                - NHL: "goals", "shots_on_goal", "saves"
+                - Soccer: "goals", "assists", "shots_on_target", "corners", "cards"
+
+        Returns:
+            Event dict with status, scores, and a stats array. Each stat has:
+            player_name, team_abbr, stat_type, stat_value.
+
+        Example:
+            >>> stats = client.get_stats("soccer_epl", event_id=1147)
+            >>> for s in stats["stats"]:
+            ...     if s["stat_type"] == "goals" and s["stat_value"] > 0:
+            ...         print(f"{s['player_name']}: {s['stat_value']} goals")
+        """
+        params = {}
+        if stat_type:
+            params["stat_type"] = ",".join(stat_type)
+
+        return self._request(
+            "GET", f"/sports/{sport}/events/{event_id}/stats", params=params
+        )
+
     def get_results(
         self,
         sport: str,

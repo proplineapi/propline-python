@@ -125,12 +125,17 @@ class PropLine:
             event_id: Optional event ID for single-event odds with player props
             markets: List of market keys to filter by. Defaults vary by endpoint.
                 Common markets:
-                - Game lines: "h2h", "spreads", "totals"
-                - MLB props: "pitcher_strikeouts", "batter_hits", "batter_home_runs",
-                  "batter_rbis", "batter_total_bases"
+                - Game lines: "h2h", "spreads", "totals" (includes alt lines + team totals)
+                - MLB props: "pitcher_strikeouts", "pitcher_outs", "batter_hits",
+                  "batter_home_runs", "batter_rbis", "batter_total_bases",
+                  "batter_2plus_hits", "batter_2plus_home_runs", "batter_2plus_rbis",
+                  "batter_3plus_rbis" (includes alt lines automatically)
                 - NBA props: "player_points", "player_rebounds", "player_assists",
-                  "player_threes"
+                  "player_threes", "player_steals", "player_blocks", "player_turnovers"
                 - NHL props: "player_goals", "player_shots_on_goal", "goalie_saves"
+                - Soccer props: "anytime_goal_scorer", "first_goal_scorer",
+                  "both_teams_to_score", "2plus_goals", "player_assists",
+                  "player_cards", "goal_or_assist", "total_corners", "total_cards"
 
         Returns:
             Single event odds dict (if event_id provided) or list of event odds dicts.
@@ -181,7 +186,11 @@ class PropLine:
         markets: list[str] | None = None,
     ) -> dict:
         """
-        Get historical odds movement for an event (Pro tier only).
+        Get historical odds movement for an event.
+
+        Pro tier returns full snapshot history. Free tier returns market
+        structure with snapshot counts (redacted=True, snapshots_available=N)
+        and an upgrade_url.
 
         Args:
             sport: Sport key
@@ -190,10 +199,8 @@ class PropLine:
 
         Returns:
             Event dict with markets containing timestamped snapshots showing
-            how odds moved over time.
-
-        Raises:
-            PropLineError: 403 if not on Pro tier
+            how odds moved over time. Free tier: snapshots array is empty
+            but snapshots_available shows how many exist.
 
         Example:
             >>> history = client.get_odds_history("baseball_mlb", event_id=16,
@@ -286,10 +293,11 @@ class PropLine:
         markets: list[str] | None = None,
     ) -> dict:
         """
-        Get resolved prop outcomes with actual player stats (Pro tier only).
+        Get resolved prop outcomes with actual player stats.
 
-        Returns each outcome with resolution (won/lost/push/void) and the
-        actual stat value that determined the result.
+        Pro tier returns full resolution data. Free tier returns the market
+        structure with odds and lines visible but resolution/actual_value
+        redacted (null, redacted=True) plus an upgrade_url.
 
         Args:
             sport: Sport key
@@ -298,10 +306,8 @@ class PropLine:
 
         Returns:
             Event dict with status, scores, and markets containing resolved
-            outcomes with resolution, actual_value, and resolved_at fields.
-
-        Raises:
-            PropLineError: 403 if not on Pro tier
+            outcomes. Pro: resolution, actual_value, resolved_at populated.
+            Free: those fields are null with redacted=True.
 
         Example:
             >>> results = client.get_results("baseball_mlb", event_id=16,

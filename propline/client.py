@@ -21,6 +21,8 @@ Usage:
 
 from __future__ import annotations
 
+import hashlib
+import hmac
 from typing import Any
 
 import httpx
@@ -327,6 +329,166 @@ class PropLine:
         return self._request(
             "GET", f"/sports/{sport}/events/{event_id}/results", params=params
         )
+
+    # ------------------------------------------------------------------
+    # Webhooks (Streaming tier)
+    # ------------------------------------------------------------------
+
+    def create_webhook(
+        self,
+        url: str,
+        events: list[str] | None = None,
+        filter_sport_key: str | None = None,
+        filter_event_id: int | None = None,
+        filter_market_key: str | None = None,
+        filter_player_name: str | None = None,
+        min_price_change_pct: float | None = None,
+    ) -> dict:
+        """
+        Register a webhook subscription. Streaming tier only.
+
+        The returned dict includes the full signing ``secret`` — this is the
+        ONLY time the secret is returned. Subsequent calls return a masked
+        value. Store it securely.
+
+        Args:
+            url: HTTPS URL that will receive POSTed events.
+            events: Event types to subscribe to. Default: all.
+                Valid values: "line_movement", "resolution".
+            filter_sport_key: Only deliver events for this sport
+                (e.g. "baseball_mlb").
+            filter_event_id: Only deliver events for this specific event.
+            filter_market_key: Only deliver events for this market
+                (e.g. "pitcher_strikeouts").
+            filter_player_name: Case-insensitive substring match on the
+                outcome's player_name.
+            min_price_change_pct: Minimum % change in American odds to
+                trigger a line_movement event. Point-only shifts always
+                pass regardless. 0 = fire on any change.
+
+        Returns:
+            Webhook dict with full ``secret`` field (only time it's revealed).
+
+        Example:
+            >>> wh = client.create_webhook(
+            ...     "https://example.com/hooks/propline",
+            ...     filter_sport_key="baseball_mlb",
+            ...     min_price_change_pct=5.0,
+            ... )
+            >>> SECRET = wh["secret"]  # store this — it won't be shown again
+        """
+        body: dict[str, Any] = {"url": url}
+        if events is not None:
+            body["events"] = events
+        if filter_sport_key is not None:
+            body["filter_sport_key"] = filter_sport_key
+        if filter_event_id is not None:
+            body["filter_event_id"] = filter_event_id
+        if filter_market_key is not None:
+            body["filter_market_key"] = filter_market_key
+        if filter_player_name is not None:
+            body["filter_player_name"] = filter_player_name
+        if min_price_change_pct is not None:
+            body["min_price_change_pct"] = min_price_change_pct
+        return self._request("POST", "/webhooks", json=body)
+
+    def list_webhooks(self) -> list[dict]:
+        """List your webhook subscriptions. Secret is masked."""
+        return self._request("GET", "/webhooks")
+
+    def get_webhook(self, webhook_id: int) -> dict:
+        """Get a single webhook subscription. Secret is masked."""
+        return self._request("GET", f"/webhooks/{webhook_id}")
+
+    def update_webhook(
+        self,
+        webhook_id: int,
+        url: str | None = None,
+        events: list[str] | None = None,
+        filter_sport_key: str | None = None,
+        filter_event_id: int | None = None,
+        filter_market_key: str | None = None,
+        filter_player_name: str | None = None,
+        min_price_change_pct: float | None = None,
+        active: bool | None = None,
+    ) -> dict:
+        """Update fields on a webhook. Only supplied fields are changed."""
+        body: dict[str, Any] = {}
+        if url is not None:
+            body["url"] = url
+        if events is not None:
+            body["events"] = events
+        if filter_sport_key is not None:
+            body["filter_sport_key"] = filter_sport_key
+        if filter_event_id is not None:
+            body["filter_event_id"] = filter_event_id
+        if filter_market_key is not None:
+            body["filter_market_key"] = filter_market_key
+        if filter_player_name is not None:
+            body["filter_player_name"] = filter_player_name
+        if min_price_change_pct is not None:
+            body["min_price_change_pct"] = min_price_change_pct
+        if active is not None:
+            body["active"] = active
+        return self._request("PATCH", f"/webhooks/{webhook_id}", json=body)
+
+    def delete_webhook(self, webhook_id: int) -> dict:
+        """Delete a webhook and cascade-remove its delivery history."""
+        return self._request("DELETE", f"/webhooks/{webhook_id}")
+
+    def test_webhook(self, webhook_id: int) -> dict:
+        """Queue a sample ``test`` payload to the webhook's URL."""
+        return self._request("POST", f"/webhooks/{webhook_id}/test")
+
+    def list_webhook_deliveries(self, webhook_id: int, limit: int = 50) -> list[dict]:
+        """
+        Return recent delivery attempts for a webhook.
+
+        Each delivery has ``status`` (pending/success/failed), ``response_code``,
+        ``attempts``, ``delivered_at``, and the ``payload`` that was sent.
+        """
+        return self._request(
+            "GET",
+            f"/webhooks/{webhook_id}/deliveries",
+            params={"limit": limit},
+        )
+
+    @staticmethod
+    def verify_signature(secret: str, timestamp: str, body: bytes, signature: str) -> bool:
+        """
+        Verify that an inbound webhook delivery was signed by PropLine.
+
+        Use this in your receiver to authenticate requests before trusting
+        their payloads. Compares HMAC-SHA256(secret, f"{timestamp}." + body)
+        against the provided signature in constant time.
+
+        Args:
+            secret: The webhook's signing secret (from ``create_webhook``).
+            timestamp: Value of the ``X-PropLine-Timestamp`` header.
+            body: Raw request body bytes.
+            signature: Value of the ``X-PropLine-Signature`` header.
+
+        Returns:
+            True if the signature matches, False otherwise.
+
+        Example (FastAPI receiver):
+            >>> @app.post("/hooks/propline")
+            ... async def receive(request: Request):
+            ...     body = await request.body()
+            ...     ok = PropLine.verify_signature(
+            ...         SECRET,
+            ...         request.headers["X-PropLine-Timestamp"],
+            ...         body,
+            ...         request.headers["X-PropLine-Signature"],
+            ...     )
+            ...     if not ok:
+            ...         raise HTTPException(401, "bad signature")
+        """
+        message = f"{timestamp}.".encode() + body
+        expected = hmac.new(secret.encode(), message, hashlib.sha256).hexdigest()
+        return hmac.compare_digest(expected, signature)
+
+    # ------------------------------------------------------------------
 
     def close(self):
         """Close the HTTP client."""

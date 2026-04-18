@@ -130,6 +130,97 @@ for market in history["markets"]:
             print(f"  {snap['recorded_at']}: {snap['price']} @ {snap['point']}")
 ```
 
+## Webhooks (Streaming tier)
+
+The Streaming tier ($149/mo) pushes `line_movement` and `resolution` events
+to your URL in real time, with HMAC-SHA256 signing and automatic retries.
+
+### Register a subscription
+
+```python
+wh = client.create_webhook(
+    url="https://example.com/hooks/propline",
+    filter_sport_key="baseball_mlb",
+    filter_market_key="pitcher_strikeouts",
+    min_price_change_pct=2.0,  # only fire on shifts of 2%+ (or any point change)
+)
+
+# Store wh["secret"] — this is the ONLY time it's returned.
+SECRET = wh["secret"]
+print(f"webhook id: {wh['id']}")
+```
+
+### Verify incoming deliveries
+
+Each POST carries these headers:
+
+| Header | Purpose |
+|--------|---------|
+| `X-PropLine-Event` | `line_movement`, `resolution`, or `test` |
+| `X-PropLine-Timestamp` | Unix seconds |
+| `X-PropLine-Signature` | HMAC-SHA256 over `f"{timestamp}." + body` |
+| `X-PropLine-Delivery` | Stable delivery id (use for idempotency) |
+
+```python
+from propline import PropLine
+
+# In a FastAPI/Flask handler:
+ok = PropLine.verify_signature(
+    secret=SECRET,
+    timestamp=headers["X-PropLine-Timestamp"],
+    body=raw_body_bytes,
+    signature=headers["X-PropLine-Signature"],
+)
+if not ok:
+    return 401
+```
+
+### Line-movement payload
+
+```json
+{
+  "event_type": "line_movement",
+  "sport_key": "baseball_mlb",
+  "event": {"id": 5070, "home_team": "Seattle Mariners", "away_team": "Texas Rangers", ...},
+  "market_key": "totals",
+  "player_name": null,
+  "outcome_name": "Over",
+  "previous": {"price_american": -750, "point": 7.0},
+  "current":  {"price_american": -300, "point": 7.5},
+  "price_change_pct": 60.0,
+  "timestamp": "2026-04-18T03:49:00Z"
+}
+```
+
+### Resolution payload
+
+```json
+{
+  "event_type": "resolution",
+  "sport_key": "baseball_mlb",
+  "event": {"id": 16, "home_score": 4, "away_score": 2, "status": "final", ...},
+  "market_key": "pitcher_strikeouts",
+  "player_name": "Tarik Skubal (DET)",
+  "outcome_name": "Over",
+  "point": 6.5,
+  "resolution": "won",
+  "actual_value": 9.0,
+  "resolved_at": "2026-04-18T06:14:22Z"
+}
+```
+
+### Manage subscriptions
+
+```python
+for wh in client.list_webhooks():
+    print(wh["id"], wh["url"], "active" if wh["active"] else "paused")
+
+client.update_webhook(wh_id, min_price_change_pct=5.0)  # change a filter
+client.test_webhook(wh_id)                              # queue a test payload
+client.list_webhook_deliveries(wh_id, limit=50)         # last 50 attempts
+client.delete_webhook(wh_id)                            # cascades deliveries
+```
+
 ## Error Handling
 
 ```python

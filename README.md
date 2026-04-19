@@ -1,6 +1,6 @@
 # PropLine Python SDK
 
-Official Python client for the [PropLine](https://prop-line.com) player props API — real-time betting odds for MLB, NBA, NHL, and NFL.
+Official Python client for the [PropLine](https://prop-line.com) player props API — real-time betting odds from Bovada, DraftKings, FanDuel, and Pinnacle across MLB, NBA, NHL, soccer, UFC, and more.
 
 ## Installation
 
@@ -53,20 +53,63 @@ for bookmaker in odds["bookmakers"]:
 | `tennis` | Tennis |
 | `hockey_nhl` | NHL |
 | `football_nfl` | NFL |
+| `soccer_epl` | EPL |
+| `soccer_la_liga` | La Liga |
+| `soccer_serie_a` | Serie A |
+| `soccer_bundesliga` | Bundesliga |
+| `soccer_ligue_1` | Ligue 1 |
+| `soccer_mls` | MLS |
+| `mma_ufc` | UFC |
+| `boxing` | Boxing |
+
+## Bookmakers
+
+Every odds response returns a `bookmakers` array so you can compare lines
+across books in a single request — iterate the array to line-shop.
+
+| Key | Book | Coverage |
+|-----|------|----------|
+| `bovada` | Bovada | All 16 sports — game lines + full player props |
+| `draftkings` | DraftKings | MLB, NBA, NHL, 6 soccer leagues — game lines + player props |
+| `fanduel` | FanDuel | MLB, NBA, NHL, 6 soccer leagues — game lines + player props |
+| `pinnacle` | Pinnacle | MLB (game lines + props), NBA/NHL/soccer (game lines, goalie saves) |
+
+```python
+odds = client.get_odds("baseball_mlb", event_id=events[0]["id"],
+    markets=["pitcher_strikeouts"])
+
+for bk in odds["bookmakers"]:
+    print(f"\n{bk['title']}")
+    for market in bk["markets"]:
+        for o in market["outcomes"]:
+            print(f"  {o['description']} {o['name']} {o['point']}: {o['price']}")
+# Bovada
+#   Zack Wheeler Over 6.5: -130
+# DraftKings
+#   Zack Wheeler Over 6.5: -125
+# FanDuel
+#   Zack Wheeler Over 6.5: -135
+```
 
 ## Available Markets
 
 ### MLB
-`pitcher_strikeouts`, `pitcher_earned_runs`, `pitcher_hits_allowed`, `batter_hits`, `batter_home_runs`, `batter_rbis`, `batter_total_bases`, `batter_stolen_bases`, `batter_walks`, `batter_singles`, `batter_doubles`, `batter_runs`
+`pitcher_strikeouts`, `pitcher_outs`, `pitcher_earned_runs`, `pitcher_hits_allowed`, `batter_hits`, `batter_home_runs`, `batter_rbis`, `batter_total_bases`, `batter_stolen_bases`, `batter_walks`, `batter_singles`, `batter_doubles`, `batter_runs`, `batter_2plus_hits`, `batter_2plus_home_runs`, `batter_2plus_rbis`, `batter_3plus_rbis`
 
 ### NBA
-`player_points`, `player_rebounds`, `player_assists`, `player_threes`, `player_points_rebounds_assists`, `player_double_double`
+`player_points`, `player_rebounds`, `player_assists`, `player_threes`, `player_steals`, `player_blocks`, `player_turnovers`, `player_points_rebounds`, `player_points_assists`, `player_rebounds_assists`, `player_points_rebounds_assists`, `player_double_double`, `player_triple_double`
 
 ### NHL
-`player_goals`, `player_shots_on_goal`, `goalie_saves`, `player_blocked_shots`
+`player_goals`, `player_first_goal`, `player_goals_2plus`, `player_goals_3plus`, `player_shots_on_goal`, `player_points_1plus`, `player_points_2plus`, `player_points_3plus`, `goalie_saves`, `player_blocked_shots`
+
+### Soccer (EPL, La Liga, Serie A, Bundesliga, Ligue 1, MLS)
+`anytime_goal_scorer`, `first_goal_scorer`, `2plus_goals`, `goal_or_assist`, `player_assists`, `player_2plus_assists`, `player_cards`, `both_teams_to_score`, `double_chance`, `draw_no_bet`, `correct_score`, `total_corners`, `total_cards`
+
+### UFC / Boxing
+`h2h`, `total_rounds`, `fight_distance`, `round_betting`
 
 ### Game Lines (all sports)
-`h2h`, `spreads`, `totals`
+`h2h`, `spreads`, `totals` (includes alt lines and team totals)
 
 ## Examples
 

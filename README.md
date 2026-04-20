@@ -75,9 +75,19 @@ across books in a single request — iterate the array to line-shop.
 | `pinnacle` | Pinnacle | MLB (game lines + props), NBA/NHL/soccer (game lines, goalie saves) |
 
 ```python
+from propline import PropLine, Bookmaker
+
+client = PropLine("your_api_key")
+
 odds = client.get_odds("baseball_mlb", event_id=events[0]["id"],
     markets=["pitcher_strikeouts"])
 
+# Filter to a specific book
+for bk in odds["bookmakers"]:
+    if bk["key"] == Bookmaker.DRAFTKINGS:
+        ...
+
+# Or iterate all books
 for bk in odds["bookmakers"]:
     print(f"\n{bk['title']}")
     for market in bk["markets"]:

@@ -1,6 +1,6 @@
 # PropLine Python SDK
 
-Official Python client for the [PropLine](https://prop-line.com) player props API — real-time betting odds from Bovada, DraftKings, FanDuel, and Pinnacle across MLB, NBA, NHL, soccer, UFC, and more.
+Official Python client for the [PropLine](https://prop-line.com) player props API — real-time betting odds from Bovada, DraftKings, FanDuel, Pinnacle, Unibet, and PrizePicks across MLB, NBA, NHL, soccer, UFC, and more.
 
 ## Installation
 
@@ -69,10 +69,12 @@ across books in a single request — iterate the array to line-shop.
 
 | Key | Book | Coverage |
 |-----|------|----------|
-| `bovada` | Bovada | All 16 sports — game lines + full player props |
+| `bovada` | Bovada | All 19 sports — game lines + full player props |
 | `draftkings` | DraftKings | MLB, NBA, NHL, 6 soccer leagues — game lines + player props |
 | `fanduel` | FanDuel | MLB, NBA, NHL, 6 soccer leagues — game lines + player props |
 | `pinnacle` | Pinnacle | MLB (game lines + props), NBA/NHL/soccer (game lines, goalie saves) |
+| `unibet` | Unibet | MLB/NBA/NHL + 6 soccer leagues — game lines; NBA + NHL + soccer player props (points, rebounds, assists, threes, steals, blocks, PRA, shots on goal, goalscorer, cards, BTTS, total corners) |
+| `prizepicks` | PrizePicks (DFS) | MLB, NBA, NHL, 9 soccer leagues — player props only; synthetic +100/+100 even-money pricing since DFS payouts scale with parlay correct-count, not per-pick odds |
 
 ```python
 from propline import PropLine, Bookmaker

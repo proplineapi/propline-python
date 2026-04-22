@@ -10,7 +10,9 @@ class Bookmaker:
     DRAFTKINGS = "draftkings"
     FANDUEL = "fanduel"
     PINNACLE = "pinnacle"
+    PRIZEPICKS = "prizepicks"
+    UNIBET = "unibet"
 
 
-__version__ = "0.4.2"
+__version__ = "0.5.0"
 __all__ = ["PropLine", "Bookmaker"]

@@ -143,9 +143,10 @@ class PropLine:
             Single event odds dict (if event_id provided) or list of event odds dicts.
             Each event has a ``bookmakers`` array with one entry per source book
             that carries lines for the requested market — currently ``bovada``,
-            ``draftkings``, ``fanduel``, and ``pinnacle`` (coverage varies by
-            sport and market). Iterate this array to compare prices across
-            books without making separate requests.
+            ``draftkings``, ``fanduel``, ``pinnacle``, ``unibet``, and
+            ``prizepicks`` (coverage varies by sport and market). Iterate this
+            array to compare prices across books without making separate
+            requests.
 
         Example:
             >>> odds = client.get_odds("basketball_nba", event_id=21,

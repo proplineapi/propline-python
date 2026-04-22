@@ -4,13 +4,13 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "propline"
-version = "0.4.2"
+version = "0.5.0"
 description = "Python SDK for the PropLine player props betting odds API"
 readme = "README.md"
 license = {text = "MIT"}
 requires-python = ">=3.8"
 authors = [{name = "PropLine", email = "support@prop-line.com"}]
-keywords = ["sports", "betting", "odds", "player-props", "api", "sportsbook", "mlb", "nba", "nhl", "nfl", "soccer", "ufc", "boxing", "bovada", "draftkings", "fanduel", "pinnacle"]
+keywords = ["sports", "betting", "odds", "player-props", "api", "sportsbook", "mlb", "nba", "nhl", "nfl", "soccer", "ufc", "boxing", "bovada", "draftkings", "fanduel", "pinnacle", "prizepicks", "unibet", "dfs"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",

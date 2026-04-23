@@ -199,6 +199,27 @@ for e in hist["entries"]:
 # Output: "2026-04-19 DraftKings: line 6.5, actual 6.0 -> Over lost, Under won"
 ```
 
+### Bulk CSV export of resolved props (Pro)
+
+```python
+# Save every resolved MLB strikeout prop since April 1st to disk.
+client.export_resolved_props(
+    sport="baseball_mlb",
+    market="pitcher_strikeouts",
+    since="2026-04-01T00:00:00Z",
+    out_path="./mlb-strikeouts.csv",
+)
+
+# Or parse in memory with pandas for analysis.
+import io
+import pandas as pd
+data = client.export_resolved_props(sport="baseball_mlb")
+df = pd.read_csv(io.BytesIO(data))
+hit_rate = (df.query("outcome_name == 'Over' and resolution == 'won'").shape[0]
+            / df.query("outcome_name == 'Over'").shape[0])
+print(f"Over hit rate across all MLB markets: {hit_rate:.1%}")
+```
+
 ## Webhooks (Streaming tier)
 
 The Streaming tier ($149/mo) pushes `line_movement` and `resolution` events

@@ -393,6 +393,81 @@ class PropLine:
             params=params,
         )
 
+    def export_resolved_props(
+        self,
+        sport: str,
+        market: str | None = None,
+        bookmaker: str | None = None,
+        since: str | None = None,
+        until: str | None = None,
+        out_path: str | None = None,
+    ) -> str | bytes:
+        """
+        Download a bulk CSV export of resolved prop outcomes. Pro+ tier.
+
+        Each row is one resolved outcome with event context, line, price,
+        resolution (won/lost/push/void), and actual stat value. Use this
+        for backtesting, model training, or statistical research —
+        capabilities the-odds-api can't match since they don't resolve
+        props.
+
+        Args:
+            sport: Sport key (e.g. "baseball_mlb"). Required.
+            market: Optional market filter (e.g. "pitcher_strikeouts").
+            bookmaker: Optional book filter (e.g. "draftkings").
+            since: Optional ISO datetime lower bound on ``resolved_at``
+                (e.g. "2026-04-01T00:00:00Z").
+            until: Optional ISO datetime upper bound.
+            out_path: If provided, stream the CSV to this file path and
+                return the path. Otherwise return the full CSV as bytes.
+
+        Returns:
+            Path string if ``out_path`` was supplied, else the CSV content
+            as bytes.
+
+        Example (save to disk):
+            >>> client.export_resolved_props(
+            ...     sport="baseball_mlb",
+            ...     market="pitcher_strikeouts",
+            ...     since="2026-04-01T00:00:00Z",
+            ...     out_path="./mlb-strikeouts.csv",
+            ... )
+
+        Example (parse in memory with pandas):
+            >>> import io, pandas as pd
+            >>> data = client.export_resolved_props("baseball_mlb")
+            >>> df = pd.read_csv(io.BytesIO(data))
+            >>> df.query("resolution == 'won'")["actual_value"].mean()
+        """
+        params: dict[str, Any] = {"sport": sport}
+        if market:
+            params["market"] = market
+        if bookmaker:
+            params["bookmaker"] = bookmaker
+        if since:
+            params["since"] = since
+        if until:
+            params["until"] = until
+
+        url = f"{self.base_url}/exports/resolved-props"
+        with self._client.stream("GET", url, params=params) as resp:
+            if resp.status_code == 401:
+                raise AuthError(401, "Invalid API key")
+            if resp.status_code == 403:
+                resp.read()
+                detail = resp.json().get("detail", "Pro tier required")
+                raise PropLineError(403, detail)
+            if resp.status_code >= 400:
+                resp.read()
+                raise PropLineError(resp.status_code, resp.text)
+
+            if out_path:
+                with open(out_path, "wb") as f:
+                    for chunk in resp.iter_bytes():
+                        f.write(chunk)
+                return out_path
+            return b"".join(resp.iter_bytes())
+
     # ------------------------------------------------------------------
     # Webhooks (Streaming tier)
     # ------------------------------------------------------------------

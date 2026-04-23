@@ -17,6 +17,9 @@ Usage:
 
     # Get historical line movement (Pro only)
     history = client.get_odds_history("baseball_mlb", event_id=16, markets=["pitcher_strikeouts"])
+
+    # Get a player's recent resolved prop history (Pro full, Free redacted)
+    hist = client.get_player_history("baseball_mlb", "Bryan Woo", market="pitcher_strikeouts")
 """
 
 from __future__ import annotations
@@ -336,6 +339,58 @@ class PropLine:
 
         return self._request(
             "GET", f"/sports/{sport}/events/{event_id}/results", params=params
+        )
+
+    def get_player_history(
+        self,
+        sport: str,
+        player_name: str,
+        market: str,
+        bookmaker: str | None = None,
+        limit: int = 20,
+    ) -> dict:
+        """
+        Get a player's recent resolved prop history for a given market.
+
+        One entry per (event, bookmaker) pair with line + Over/Under prices
+        + resolution + actual value. Use this to answer "did X go over/under
+        in their last N games?" without reconstructing it from raw outcomes.
+
+        Pro tier returns full data. Free tier returns event structure with
+        resolution/actual_value/prices nulled and ``redacted=True``.
+
+        Args:
+            sport: Sport key (e.g. "baseball_mlb").
+            player_name: Player's name. Case-insensitive prefix match —
+                "Bryan Woo" and "bryan woo" both work, and team suffixes
+                like "(SEA)" in the outcome description are tolerated.
+            market: Market key (e.g. "pitcher_strikeouts", "player_points").
+            bookmaker: Optional single-book filter (e.g. "draftkings"). If
+                omitted, returns entries across every book that quoted lines.
+            limit: Max entries to return (1-100). Default 20.
+
+        Returns:
+            Dict with keys: player_name, sport_key, market, entries, upgrade_url.
+            Each entry: event_id, commence_time, home_team, away_team,
+            bookmaker, bookmaker_title, line, over_price, under_price,
+            actual_value, over_result, under_result, resolved_at, redacted.
+
+        Example:
+            >>> hist = client.get_player_history("baseball_mlb", "Bryan Woo",
+            ...     market="pitcher_strikeouts", limit=10)
+            >>> for e in hist["entries"]:
+            ...     print(f"{e['commence_time'][:10]} {e['bookmaker']}: "
+            ...           f"line {e['line']}, actual {e['actual_value']} "
+            ...           f"-> Over {e['over_result']}")
+        """
+        params: dict[str, Any] = {"market": market, "limit": limit}
+        if bookmaker:
+            params["bookmaker"] = bookmaker
+
+        return self._request(
+            "GET",
+            f"/sports/{sport}/players/{player_name}/history",
+            params=params,
         )
 
     # ------------------------------------------------------------------

@@ -185,6 +185,20 @@ for market in history["markets"]:
             print(f"  {snap['recorded_at']}: {snap['price']} @ {snap['point']}")
 ```
 
+### Get player prop history (Pro full, Free redacted)
+
+```python
+# "Did Bryan Woo go over/under his last 10 strikeout props?"
+hist = client.get_player_history("baseball_mlb", "Bryan Woo",
+    market="pitcher_strikeouts", limit=10)
+
+for e in hist["entries"]:
+    print(f"{e['commence_time'][:10]} {e['bookmaker_title']}: "
+          f"line {e['line']}, actual {e['actual_value']} "
+          f"-> Over {e['over_result']}, Under {e['under_result']}")
+# Output: "2026-04-19 DraftKings: line 6.5, actual 6.0 -> Over lost, Under won"
+```
+
 ## Webhooks (Streaming tier)
 
 The Streaming tier ($149/mo) pushes `line_movement` and `resolution` events

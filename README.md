@@ -199,6 +199,25 @@ for e in hist["entries"]:
 # Output: "2026-04-19 DraftKings: line 6.5, actual 6.0 -> Over lost, Under won"
 ```
 
+### Cross-book +EV (Pro)
+
+```python
+# Find +EV plays on a single event. Pinnacle anchors the no-vig fair
+# line; every other book's price gets an EV%, with +EV plays floated
+# to the top of each line group.
+ev = client.get_event_ev("baseball_mlb", 12345,
+    markets=["pitcher_strikeouts", "batter_hits"])
+
+for line in ev["lines"]:
+    plus = [o for o in line["outcomes"] if o["is_plus_ev"]]
+    if plus:
+        print(f"\n{line['market_key']} {line['description']} "
+              f"line={line['point']} fair={line['fair_source']}")
+        for o in plus:
+            print(f"  {o['book_title']:11s} {o['name']:6s} "
+                  f"{o['price']:+5d}  ev=+{o['ev_pct']}%")
+```
+
 ### Bulk CSV export of resolved props (Pro)
 
 ```python

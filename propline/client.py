@@ -393,6 +393,60 @@ class PropLine:
             params=params,
         )
 
+    def get_event_ev(
+        self,
+        sport: str,
+        event_id: int | str,
+        markets: str | list[str] | None = None,
+    ) -> dict:
+        """
+        Cross-book +EV analysis for a single event.
+
+        Groups every outcome by (market, player, line) across the books we
+        carry, derives a no-vig fair line from a sharp anchor (Pinnacle
+        preferred, Bovada fallback), and computes EV% for every other book's
+        price at the same line. Outcomes are sorted with +EV plays floated
+        to the top of each line group.
+
+        PrizePicks is excluded — its synthetic +100/+100 prices aren't
+        payout odds. Lines without sharp-anchor coverage on this event are
+        dropped from the response.
+
+        Pro tier required (returns 403 on free).
+
+        Args:
+            sport: Sport key (e.g. "baseball_mlb").
+            event_id: Event ID (int or string).
+            markets: Optional comma-separated string or list of market keys
+                to evaluate (e.g. ["pitcher_strikeouts", "batter_hits"]).
+                Omit to evaluate every market on the event.
+
+        Returns:
+            Dict with keys: id, sport_key, home_team, away_team,
+            commence_time, fair_source_default, lines.
+            Each line: market_key, description, point, fair_source,
+            fair_probs, outcomes. Each outcome: book, book_title, name,
+            price, ev_pct, is_plus_ev.
+
+        Example:
+            >>> ev = client.get_event_ev("baseball_mlb", 12345)
+            >>> for line in ev["lines"]:
+            ...     plus = [o for o in line["outcomes"] if o["is_plus_ev"]]
+            ...     if plus:
+            ...         print(f"{line['market_key']} {line['description']} "
+            ...               f"{line['point']}: {len(plus)} +EV plays")
+        """
+        params: dict[str, Any] = {}
+        if markets:
+            params["markets"] = (
+                ",".join(markets) if isinstance(markets, list) else markets
+            )
+        return self._request(
+            "GET",
+            f"/sports/{sport}/events/{event_id}/ev",
+            params=params,
+        )
+
     def export_resolved_props(
         self,
         sport: str,

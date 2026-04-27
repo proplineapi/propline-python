@@ -186,11 +186,14 @@ for market in history["markets"]:
                   f" (book reported: {snap.get('book_updated_at') or 'n/a'})")
 ```
 
-Each snapshot carries two timestamps: `recorded_at` (when our scraper saw
-the odds) and `book_updated_at` (when the book itself reports the price
-was last set). `book_updated_at` is populated for books that expose a
-publish-time signal (Bovada today); other books leave it `null`. The gap
-between the two is per-book scraper latency. See
+Each snapshot carries up to three change-detection signals:
+`recorded_at` (when our scraper saw the odds), `book_updated_at` (when
+the book itself reports the price was last set — Bovada today),
+and `book_version` (per-market monotonic counter — Pinnacle today).
+The gap between `recorded_at` and `book_updated_at` is per-book
+scraper latency; deltas in `book_version` between two snapshots tell
+you how many distinct market updates the book recorded between them,
+even when the visible price didn't change. See
 <https://prop-line.com/docs#timestamps> for the full semantic.
 
 ### Get player prop history (Pro full, Free redacted)

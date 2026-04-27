@@ -182,8 +182,16 @@ for market in history["markets"]:
     for outcome in market["outcomes"]:
         print(f"\n{outcome['description']}:")
         for snap in outcome["snapshots"]:
-            print(f"  {snap['recorded_at']}: {snap['price']} @ {snap['point']}")
+            print(f"  {snap['recorded_at']}: {snap['price']} @ {snap['point']}"
+                  f" (book reported: {snap.get('book_updated_at') or 'n/a'})")
 ```
+
+Each snapshot carries two timestamps: `recorded_at` (when our scraper saw
+the odds) and `book_updated_at` (when the book itself reports the price
+was last set). `book_updated_at` is populated for books that expose a
+publish-time signal (Bovada today); other books leave it `null`. The gap
+between the two is per-book scraper latency. See
+<https://prop-line.com/docs#timestamps> for the full semantic.
 
 ### Get player prop history (Pro full, Free redacted)
 

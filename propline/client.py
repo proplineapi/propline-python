@@ -393,6 +393,34 @@ class PropLine:
             params=params,
         )
 
+    def get_futures(self, sport: str) -> list[dict]:
+        """
+        List futures markets for a sport — championship winner, MVP,
+        division winner, etc. Each row is one (futures event, book,
+        market) with every team or player priced. Free tier; pulled
+        from each book's futures feed (Bovada today).
+
+        Args:
+            sport: Sport key (e.g. "baseball_mlb", "basketball_nba").
+
+        Returns:
+            List of futures events. Each event: id, sport_key, title,
+            commence_time, markets. Each market: key (slugified
+            description like "world_series_winner"), description,
+            bookmaker, bookmaker_title, last_update, book_updated_at,
+            outcomes. Each outcome: name, price, price_decimal.
+
+        Example:
+            >>> futures = client.get_futures("baseball_mlb")
+            >>> for event in futures:
+            ...     print(f"{event['title']} @ {event['commence_time']}")
+            ...     for m in event["markets"]:
+            ...         top3 = sorted(m["outcomes"], key=lambda o: o["price"])[:3]
+            ...         for o in top3:
+            ...             print(f"  {o['name']:<25} {o['price']:+}")
+        """
+        return self._request("GET", f"/sports/{sport}/futures")
+
     def get_event_ev(
         self,
         sport: str,

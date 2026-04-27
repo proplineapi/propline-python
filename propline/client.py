@@ -475,6 +475,73 @@ class PropLine:
             params=params,
         )
 
+    def calc_event_ev(
+        self,
+        sport: str,
+        event_id: int | str,
+        market: str,
+        name: str,
+        price: int,
+        point: float | None = None,
+        description: str = "",
+    ) -> dict:
+        """
+        Calculate EV% for a user-supplied price against the event's
+        no-vig fair anchor. Useful for books PropLine doesn't carry —
+        Caesars, BetMGM, Fanatics, BetUS, Hard Rock — where you have
+        a price in hand and want to know if it's +EV against the
+        sharp consensus we DO carry.
+
+        Same fair-line math as `get_event_ev` (Pinnacle-preferred
+        anchor, no-vig devigging) but takes one user price as input
+        instead of returning every covered book's price as output.
+
+        Pro tier required.
+
+        Args:
+            sport: Sport key (e.g. "baseball_mlb").
+            event_id: Event ID (int or string).
+            market: Market key — h2h / spreads / totals / pitcher_strikeouts / etc.
+            name: Outcome name. Team name for h2h/spreads; "Over" or
+                "Under" for totals and player props.
+            price: American odds at your book, e.g. -118 or 145.
+            point: Line/point for spreads, totals, and player props.
+                Spread sign matters: -1.5 for the favorite. Omit for h2h.
+            description: Player name for player-prop markets. Omit for
+                game-line markets.
+
+        Returns:
+            Dict with: market, name, point, description, price,
+            fair_source, fair_prob, implied_prob, ev_pct, is_plus_ev.
+
+        Raises:
+            On 404 (no fair-anchored line for the requested tuple) the
+            response detail carries an `available_lines_for_market`
+            list so you can correct the inputs.
+
+        Example:
+            >>> result = client.calc_event_ev(
+            ...     "baseball_mlb", event_id=12614,
+            ...     market="h2h", name="Pittsburgh Pirates", price=-118,
+            ... )
+            >>> print(f"EV {result['ev_pct']:+.2f}%  fair={result['fair_prob']}")
+            EV +2.04%  fair=0.5523
+        """
+        params: dict[str, Any] = {
+            "market": market,
+            "name": name,
+            "price": price,
+        }
+        if point is not None:
+            params["point"] = point
+        if description:
+            params["description"] = description
+        return self._request(
+            "GET",
+            f"/sports/{sport}/events/{event_id}/ev/calc",
+            params=params,
+        )
+
     def export_resolved_props(
         self,
         sport: str,

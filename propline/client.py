@@ -475,6 +475,63 @@ class PropLine:
             params=params,
         )
 
+    def get_event_best_line(
+        self,
+        sport: str,
+        event_id: int | str,
+        markets: str | list[str] | None = None,
+    ) -> dict:
+        """
+        Cross-book best-line lookup for a single event.
+
+        For each (market, player, line) tuple, returns the single best
+        American price across every book we carry, with the book name
+        attached. Companion to get_event_ev: best-line tells you which
+        book has the highest payout right now; +EV tells you whether
+        that price beats a sharp no-vig fair line. Most line shoppers
+        want both.
+
+        PrizePicks is excluded from the comparison — its DFS payout
+        structure (synthetic +100/+100 quotes) isn't directly
+        comparable to traditional sportsbook odds.
+
+        Hobby tier or higher required (returns 403 on free).
+
+        Args:
+            sport: Sport key (e.g. "baseball_mlb").
+            event_id: Event ID (int or string).
+            markets: Optional comma-separated string or list of market
+                keys to evaluate (e.g. ["pitcher_strikeouts", "h2h"]).
+                Omit to include every market on the event.
+
+        Returns:
+            Dict with keys: id, sport_key, home_team, away_team,
+            commence_time, books_considered, lines. Each line:
+            market_key, description (player name or ""), point,
+            sides. `sides` is a dict mapping side name (e.g. "Over",
+            "Under", or a team name) to a dict with `best` (single
+            BestPrice) and `all_prices` (list of BestPrice sorted
+            best-first). Each BestPrice has `book`, `book_title`,
+            `price`.
+
+        Example:
+            >>> bl = client.get_event_best_line("baseball_mlb", 12345)
+            >>> for line in bl["lines"]:
+            ...     for side, info in line["sides"].items():
+            ...         print(f"{line['description']} {side} {line['point']}: "
+            ...               f"{info['best']['price']} @ {info['best']['book_title']}")
+        """
+        params: dict[str, Any] = {}
+        if markets:
+            params["markets"] = (
+                ",".join(markets) if isinstance(markets, list) else markets
+            )
+        return self._request(
+            "GET",
+            f"/sports/{sport}/events/{event_id}/best-line",
+            params=params,
+        )
+
     def calc_event_ev(
         self,
         sport: str,

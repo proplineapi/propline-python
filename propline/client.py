@@ -128,7 +128,13 @@ class PropLine:
         Args:
             sport: Sport key (e.g. "baseball_mlb")
             event_id: Optional event ID for single-event odds with player props
-            markets: List of market keys to filter by. Defaults vary by endpoint.
+            markets: List of market keys to filter by. If omitted, the
+                bulk /odds endpoint defaults to ``h2h`` and the per-event
+                /odds endpoint defaults to ``h2h,spreads,totals`` —
+                game-line markets every book carries across every sport.
+                Pass an explicit list to fetch player props (sport-
+                specific keys; see below).
+
                 Common markets:
                 - Game lines: "h2h", "spreads", "totals" (includes alt lines + team totals)
                 - MLB props: "pitcher_strikeouts", "pitcher_outs", "batter_hits",

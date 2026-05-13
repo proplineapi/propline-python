@@ -12,9 +12,9 @@ jobs:
     permissions:
       id-token: write  # OIDC for trusted publishing
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6
 
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6
         with:
           python-version: '3.12'
 
@@ -36,5 +36,14 @@ jobs:
           python -m pip install --upgrade build
           python -m build
 
+      - name: Audit Python deps for known CVEs
+        # Block publish if any direct or transitive dep has a known
+        # CVE. Pairs with Dependabot cooldown (waits 7d before opening
+        # update PRs).
+        run: |
+          pip install pip-audit
+          pip install .
+          pip-audit --strict
+
       - name: Publish
-        uses: pypa/gh-action-pypi-publish@release/v1
+        uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b  # release/v1

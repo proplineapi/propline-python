@@ -680,6 +680,32 @@ class PropLine:
                 return out_path
             return b"".join(resp.iter_bytes())
 
+    def get_resolution_summary(self, days: int = 30) -> dict:
+        """
+        Factual volume of graded player props over the last N days.
+
+        Aggregated counts only — a coverage proof (every outcome counted
+        was graded against the real box score), never a profitability
+        claim. Free tier.
+
+        Args:
+            days: Look-back window, 1-90 (default: 30)
+
+        Returns:
+            Dict with: days, total_graded (incl. void), total_settled
+            (won/lost/push), events_graded, sports_covered, by_sport
+            (list of {sport_key, title, graded, events}), and top_markets
+            (top 12 {market_key, graded}).
+
+        Example:
+            >>> s = client.get_resolution_summary(days=30)
+            >>> print(f"{s['total_graded']:,} props graded across "
+            ...       f"{s['sports_covered']} sports")
+        """
+        return self._request(
+            "GET", "/markets/resolution-summary", params={"days": days}
+        )
+
     # ------------------------------------------------------------------
     # Webhooks (Streaming tier)
     # ------------------------------------------------------------------

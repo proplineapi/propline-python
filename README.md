@@ -155,6 +155,16 @@ for game in scores:
               f"{game['home_team']} {game['home_score']}")
 ```
 
+### Get resolution coverage summary (free)
+
+```python
+s = client.get_resolution_summary(days=30)
+print(f"{s['total_graded']:,} props graded across "
+      f"{s['sports_covered']} sports in {s['days']}d")
+for row in s["by_sport"][:5]:
+    print(f"  {row['title']}: {row['graded']:,} ({row['events']} games)")
+```
+
 ### Get resolved prop outcomes (Pro only)
 
 ```python

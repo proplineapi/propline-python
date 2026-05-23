@@ -203,6 +203,12 @@ class PropLine:
         sport: str,
         event_id: int | str,
         markets: list[str] | None = None,
+        from_: str | None = None,
+        to: str | None = None,
+        relative_from: str | None = None,
+        relative_to: str | None = None,
+        interval: str | None = None,
+        changes_only: bool = False,
     ) -> dict:
         """
         Get historical odds movement for an event.
@@ -215,6 +221,18 @@ class PropLine:
             sport: Sport key
             event_id: Event ID
             markets: List of market keys to filter by
+            from_: ISO timestamp; only include snapshots at or after this time.
+                Mutually exclusive with relative_from.
+            to: ISO timestamp; only include snapshots at or before this time.
+                Mutually exclusive with relative_to.
+            relative_from: Offset relative to commence_time, e.g. "-3h", "-30m",
+                "-90s". Mutually exclusive with from_.
+            relative_to: Offset relative to commence_time, e.g. "-1m" or "0"
+                for commence_time itself. Mutually exclusive with to.
+            interval: Downsample to one snapshot per bucket. One of "30s",
+                "1m", "5m", "15m", "30m", "1h". Last snapshot in each bucket wins.
+            changes_only: When True, drop snapshots whose (price, point) match
+                the previous one. The opening line is always kept.
 
         Returns:
             Event dict with markets containing timestamped snapshots showing
@@ -222,20 +240,79 @@ class PropLine:
             but snapshots_available shows how many exist.
 
         Example:
-            >>> history = client.get_odds_history("baseball_mlb", event_id=16,
-            ...     markets=["pitcher_strikeouts"])
-            >>> for market in history["markets"]:
-            ...     for outcome in market["outcomes"]:
-            ...         print(f"{outcome['description']}: {len(outcome['snapshots'])} changes")
-            ...         for snap in outcome["snapshots"]:
-            ...             print(f"  {snap['recorded_at']}: {snap['price']} @ {snap['point']}")
+            >>> # Last 30 minutes of moves before tip, change-only:
+            >>> history = client.get_odds_history(
+            ...     "baseball_mlb", event_id=16,
+            ...     markets=["pitcher_strikeouts"],
+            ...     relative_from="-30m", relative_to="0",
+            ...     changes_only=True,
+            ... )
         """
-        params = {}
+        params: dict[str, str | bool] = {}
+        if markets:
+            params["markets"] = ",".join(markets)
+        if from_ is not None:
+            params["from"] = from_
+        if to is not None:
+            params["to"] = to
+        if relative_from is not None:
+            params["relative_from"] = relative_from
+        if relative_to is not None:
+            params["relative_to"] = relative_to
+        if interval is not None:
+            params["interval"] = interval
+        if changes_only:
+            params["changes_only"] = "true"
+
+        return self._request(
+            "GET", f"/sports/{sport}/events/{event_id}/odds/history", params=params
+        )
+
+    def get_odds_closing(
+        self,
+        sport: str,
+        event_id: int | str,
+        markets: list[str] | None = None,
+    ) -> dict:
+        """
+        Get the closing line per (book, market, outcome) for an event.
+
+        Returns the last snapshot at or before commence_time per outcome —
+        the canonical "closing line" for CLV-tracking. Replaces the
+        "fetch full history → grep for the latest pre-game row" pattern
+        with one call. Each outcome carries a ``closing_at`` field with the
+        snapshot's ``recorded_at`` so you can confirm freshness.
+
+        Hobby+ tiers get full data; free tier sees market structure with
+        ``redacted=True`` and an ``upgrade_url``.
+
+        Args:
+            sport: Sport key
+            event_id: Event ID
+            markets: List of market keys to filter by
+                (default: h2h,spreads,totals)
+
+        Returns:
+            Event dict with one row per outcome carrying its closing
+            ``price``, ``point``, and ``closing_at`` timestamp.
+
+        Example:
+            >>> closing = client.get_odds_closing(
+            ...     "baseball_mlb", event_id=5885,
+            ...     markets=["pitcher_strikeouts"],
+            ... )
+            >>> for book in closing["bookmakers"]:
+            ...     for m in book["markets"]:
+            ...         for o in m["outcomes"]:
+            ...             print(book["key"], o["description"], o["name"],
+            ...                   o["price"], "at", o["closing_at"])
+        """
+        params: dict[str, str] = {}
         if markets:
             params["markets"] = ",".join(markets)
 
         return self._request(
-            "GET", f"/sports/{sport}/events/{event_id}/odds/history", params=params
+            "GET", f"/sports/{sport}/events/{event_id}/odds/closing", params=params
         )
 
     def get_scores(

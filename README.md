@@ -182,18 +182,19 @@ for market in results["markets"]:
 # Output: "Tarik Skubal (DET) Over 6.5: won (actual: 7.0)"
 ```
 
-### Get historical line movement (Pro only)
+### Get historical line movement (Hobby+)
 
 ```python
 history = client.get_odds_history("baseball_mlb", event_id=16,
     markets=["pitcher_strikeouts"])
 
-for market in history["markets"]:
-    for outcome in market["outcomes"]:
-        print(f"\n{outcome['description']}:")
-        for snap in outcome["snapshots"]:
-            print(f"  {snap['recorded_at']}: {snap['price']} @ {snap['point']}"
-                  f" (book reported: {snap.get('book_updated_at') or 'n/a'})")
+for book in history["bookmakers"]:
+    for market in book["markets"]:
+        for outcome in market["outcomes"]:
+            print(f"\n[{book['key']}] {outcome['description']}:")
+            for snap in outcome["snapshots"]:
+                print(f"  {snap['recorded_at']}: {snap['price']} @ {snap['point']}"
+                      f" (book reported: {snap.get('book_updated_at') or 'n/a'})")
 ```
 
 Each snapshot carries up to three change-detection signals:
@@ -205,6 +206,57 @@ scraper latency; deltas in `book_version` between two snapshots tell
 you how many distinct market updates the book recorded between them,
 even when the visible price didn't change. See
 <https://prop-line.com/docs#timestamps> for the full semantic.
+
+#### Period-historical query params
+
+Combine any of these to scope, downsample, and de-noise:
+
+```python
+# Just the last 30 minutes of moves before tip — and only the moments
+# when the line actually changed.
+moves = client.get_odds_history(
+    "baseball_mlb", event_id=16,
+    markets=["pitcher_strikeouts"],
+    relative_from="-30m",
+    relative_to="0",
+    changes_only=True,
+)
+
+# One snapshot per minute for the 3 hours before commence — stable
+# spacing for backtests / moving averages.
+ts = client.get_odds_history(
+    "baseball_mlb", event_id=16,
+    markets=["pitcher_strikeouts"],
+    relative_from="-3h",
+    relative_to="0",
+    interval="1m",   # 30s | 1m | 5m | 15m | 30m | 1h
+)
+```
+
+- `from` / `to`: absolute ISO timestamps (`from_` in Python — `from` is reserved).
+- `relative_from` / `relative_to`: offsets relative to `commence_time`. Forms: `-3h`, `-30m`, `-90s`, `0`. Mutually exclusive with the absolute counterpart.
+- `interval`: downsample to one snapshot per bucket; latest snapshot in each bucket wins.
+- `changes_only`: drop adjacent snapshots whose `(price, point)` match the previous one. Opening line is always kept.
+
+### Get closing line / CLV (Hobby+)
+
+One call returns the last snapshot per `(book, market, outcome)` at or
+before `commence_time` — the canonical closing line for CLV tracking.
+
+```python
+closing = client.get_odds_closing(
+    "baseball_mlb", event_id=5885,
+    markets=["pitcher_strikeouts"],
+)
+
+for book in closing["bookmakers"]:
+    for m in book["markets"]:
+        for o in m["outcomes"]:
+            if o["description"] != "Bryan Woo" or o["name"] != "Over":
+                continue
+            print(f"{book['key']}: closed at {o['price']} ({o['closing_at']})")
+            # Compare to your entry: -110 → closing -130 = +CLV
+```
 
 ### Get player prop history (Pro full, Free redacted)
 

@@ -265,6 +265,43 @@ class PropLine:
             "GET", f"/sports/{sport}/scores", params={"days_from": days_from}
         )
 
+    def get_mlb_grand_salami(
+        self,
+        date: str | None = None,
+    ) -> dict:
+        """
+        Get the synthetic MLB Grand Salami for a given UTC date — total
+        runs scored across every MLB game on the slate, plus each book's
+        implied Grand Salami line (median of per-game primary totals
+        across our MLB books).
+
+        No retail sportsbook quotes this as a single market, so historical
+        cross-book Grand Salami data isn't available elsewhere.
+
+        Args:
+            date: YYYY-MM-DD UTC date. Defaults to today (UTC).
+
+        Returns:
+            Dict with: sport_key, date, games_total, games_completed,
+            games_in_progress, games_upcoming, actual_total_runs (null
+            until at least one game completes), bookmakers (list of
+            {key, title, games_priced, line, result}). `result` is
+            'over' / 'under' / 'push' once the slate has cleared, null
+            until then.
+
+        Example:
+            >>> gs = client.get_mlb_grand_salami(date="2026-05-21")
+            >>> print(f"Actual total runs: {gs['actual_total_runs']}")
+            >>> for book in gs["bookmakers"]:
+            ...     print(f"{book['title']}: line={book['line']} → {book['result']}")
+        """
+        params = {}
+        if date:
+            params["date"] = date
+        return self._request(
+            "GET", "/sports/baseball_mlb/grand-salami", params=params
+        )
+
     def get_stats(
         self,
         sport: str,

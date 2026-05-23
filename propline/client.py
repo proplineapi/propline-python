@@ -120,6 +120,7 @@ class PropLine:
         sport: str,
         event_id: int | str | None = None,
         markets: list[str] | None = None,
+        period: str | list[str] | None = None,
     ) -> dict | list[dict]:
         """
         Get current odds. If event_id is provided, returns odds for that event
@@ -170,6 +171,8 @@ class PropLine:
         params = {}
         if markets:
             params["markets"] = ",".join(markets)
+        if period is not None:
+            params["period"] = period if isinstance(period, str) else ",".join(period)
 
         if event_id is not None:
             return self._request("GET", f"/sports/{sport}/events/{event_id}/odds", params=params)
@@ -209,6 +212,7 @@ class PropLine:
         relative_to: str | None = None,
         interval: str | None = None,
         changes_only: bool = False,
+        period: str | list[str] | None = None,
     ) -> dict:
         """
         Get historical odds movement for an event.
@@ -263,6 +267,8 @@ class PropLine:
             params["interval"] = interval
         if changes_only:
             params["changes_only"] = "true"
+        if period is not None:
+            params["period"] = period if isinstance(period, str) else ",".join(period)
 
         return self._request(
             "GET", f"/sports/{sport}/events/{event_id}/odds/history", params=params
@@ -273,6 +279,7 @@ class PropLine:
         sport: str,
         event_id: int | str,
         markets: list[str] | None = None,
+        period: str | list[str] | None = None,
     ) -> dict:
         """
         Get the closing line per (book, market, outcome) for an event.
@@ -310,6 +317,8 @@ class PropLine:
         params: dict[str, str] = {}
         if markets:
             params["markets"] = ",".join(markets)
+        if period is not None:
+            params["period"] = period if isinstance(period, str) else ",".join(period)
 
         return self._request(
             "GET", f"/sports/{sport}/events/{event_id}/odds/closing", params=params

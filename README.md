@@ -145,6 +145,36 @@ for event in events:
                     print(f"  {o['description']} {o['name']} {o['point']}: {o['price']}")
 ```
 
+### Filter to game-period markets
+
+Every odds endpoint accepts a `period=` kwarg to scope results to
+first-quarter / first-half / first-period / first-N-innings markets. Omit
+it for full-game markets — the default behavior is unchanged.
+
+```python
+# First-quarter NBA totals
+q1 = client.get_odds(
+    "basketball_nba", event_id=12345,
+    markets=["totals"],
+    period="q1",   # q1|q2|q3|q4 | h1|h2 | p1|p2|p3 | i1..i9 | f3|f5|f7
+)
+
+# Multiple periods in one call — pass a list or a comma-separated string
+both = client.get_odds(
+    "basketball_nba", event_id=12345,
+    markets=["totals"],
+    period=["q1", "q2"],
+)
+
+# Pass period="all" to include every period alongside the full-game row.
+```
+
+Every response row carries a `period` field so you can bucket
+client-side. Coverage today: Bovada / DraftKings / FanDuel / Pinnacle on
+NBA / NHL / MLB / soccer. Football period markets land at NFL preseason
+(August 2026). The same `period=` kwarg works on `get_odds_history()` and
+`get_odds_closing()` too.
+
 ### Get game scores
 
 ```python

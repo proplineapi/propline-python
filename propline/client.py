@@ -388,6 +388,44 @@ class PropLine:
             "GET", "/sports/baseball_mlb/grand-salami", params=params
         )
 
+    def get_nhl_daily_goals_total(
+        self,
+        date: str | None = None,
+    ) -> dict:
+        """
+        Get the synthetic NHL Daily Goals Total for a given UTC date —
+        total goals scored across every NHL game on the slate (incl.
+        OT/SO), plus each book's implied Daily Goals Total line (median
+        of per-game primary totals across our NHL books).
+
+        Hockey's equivalent of the MLB Grand Salami. No retail sportsbook
+        quotes this as a single market, so historical cross-book data
+        isn't available elsewhere.
+
+        Args:
+            date: YYYY-MM-DD UTC date. Defaults to today (UTC).
+
+        Returns:
+            Dict with: sport_key, date, games_total, games_completed,
+            games_in_progress, games_upcoming, actual_total_goals (null
+            until at least one game completes), bookmakers (list of
+            {key, title, games_priced, line, result}). `result` is
+            'over' / 'under' / 'push' once the slate has cleared, null
+            until then.
+
+        Example:
+            >>> dgt = client.get_nhl_daily_goals_total(date="2026-05-24")
+            >>> print(f"Actual total goals: {dgt['actual_total_goals']}")
+            >>> for book in dgt["bookmakers"]:
+            ...     print(f"{book['title']}: line={book['line']} → {book['result']}")
+        """
+        params = {}
+        if date:
+            params["date"] = date
+        return self._request(
+            "GET", "/sports/hockey_nhl/daily-goals-total", params=params
+        )
+
     def get_stats(
         self,
         sport: str,

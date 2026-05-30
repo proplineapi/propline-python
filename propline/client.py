@@ -560,6 +560,60 @@ class PropLine:
             params=params,
         )
 
+    def get_player_trends(
+        self,
+        sport: str,
+        player_name: str,
+        market: str | None = None,
+    ) -> dict:
+        """
+        Get a player's hit-rate trends across recent graded games.
+
+        For each market, returns rolling Over/Under splits over the last
+        5/10/20/50 games, the current streak, the most recent line + actual
+        value, and the average actual stat. Use this to answer "how often
+        has X gone over their line lately?" without reconstructing it from
+        raw resolved history.
+
+        Paid tier returns full data. Free tier returns each market with only
+        ``market`` + ``games_graded`` and ``redacted=True``.
+
+        Args:
+            sport: Sport key (e.g. "baseball_mlb").
+            player_name: Player's name. Case-insensitive prefix match —
+                "Aaron Judge" and "aaron judge" both work, and team suffixes
+                like "(NYY)" in the outcome description are tolerated.
+            market: Optional market key (e.g. "batter_total_bases",
+                "player_points"). If omitted, returns trends for every market
+                the player has graded games in.
+
+        Returns:
+            Dict with keys: player_name, sport_key, markets, upgrade_url.
+            Each market entry: market, games_graded, reference_bookmaker,
+            reference_bookmaker_title, recent_line, avg_actual, last_5,
+            last_10, last_20, last_50, current_streak, last_game, redacted.
+            Each window (last_N) — possibly null when too few games exist —
+            has: window, games, over, under, push, over_pct.
+
+        Example:
+            >>> trends = client.get_player_trends("baseball_mlb", "Aaron Judge",
+            ...     market="batter_total_bases")
+            >>> for m in trends["markets"]:
+            ...     l10 = m["last_10"]
+            ...     print(f"{m['market']}: line {m['recent_line']}, "
+            ...           f"L10 {l10['over']}-{l10['under']} "
+            ...           f"({l10['over_pct']}% over)")
+        """
+        params: dict[str, Any] = {}
+        if market:
+            params["market"] = market
+
+        return self._request(
+            "GET",
+            f"/sports/{sport}/players/{player_name}/trends",
+            params=params,
+        )
+
     def get_futures(self, sport: str) -> list[dict]:
         """
         List futures markets for a sport — championship winner, MVP,

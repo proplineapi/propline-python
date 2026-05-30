@@ -302,6 +302,25 @@ for e in hist["entries"]:
 # Output: "2026-04-19 DraftKings: line 6.5, actual 6.0 -> Over lost, Under won"
 ```
 
+### Get player hit-rate trends (Pro full, Free redacted)
+
+```python
+# "How often has Aaron Judge gone over his total bases line lately?"
+# Rolling Over/Under splits over the last 5/10/20/50 graded games,
+# plus current streak and most-recent line/actual. Omit `market` for
+# trends across every market the player has graded games in.
+trends = client.get_player_trends("baseball_mlb", "Aaron Judge",
+    market="batter_total_bases")
+
+for m in trends["markets"]:
+    l10 = m["last_10"]
+    streak = m["current_streak"]
+    print(f"{m['market']}: line {m['recent_line']}, avg {m['avg_actual']}, "
+          f"L10 {l10['over']}-{l10['under']} ({l10['over_pct']}% over), "
+          f"streak {streak['length']} {streak['result']}")
+# Output: "batter_total_bases: line 1.5, avg 2.02, L10 3-7 (30.0% over), streak 2 under"
+```
+
 ### Cross-book +EV (Pro)
 
 ```python

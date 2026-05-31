@@ -895,6 +895,81 @@ class PropLine:
                 return out_path
             return b"".join(resp.iter_bytes())
 
+    def export_odds_history(
+        self,
+        sport: str,
+        market: str | None = None,
+        bookmaker: str | None = None,
+        since: str | None = None,
+        until: str | None = None,
+        out_path: str | None = None,
+    ) -> str | bytes:
+        """
+        Download the full line-movement time-series as CSV.
+
+        One row per (outcome, snapshot): every recorded odds snapshot
+        (price + line, per book, including period markets), not just the
+        closing line. This is the raw tick history that no subscription
+        tier can pull in bulk — Pro/Streaming get per-event
+        ``get_odds_history`` only; this bulk firehose is exclusive to the
+        one-time Historical Backfill pass and Enterprise.
+
+        A full archive runs to gigabytes per sport — page month by month
+        with ``since``/``until`` so each download stays manageable.
+
+        Args:
+            sport: Sport key (e.g. "baseball_mlb"). Required.
+            market: Optional market filter (e.g. "pitcher_strikeouts").
+            bookmaker: Optional book filter (e.g. "draftkings").
+            since: Optional ISO datetime lower bound on ``recorded_at``
+                (e.g. "2026-04-01T00:00:00Z").
+            until: Optional ISO datetime upper bound on ``recorded_at``.
+            out_path: If provided, stream the CSV to this file path and
+                return the path. Otherwise return the full CSV as bytes.
+
+        Returns:
+            Path string if ``out_path`` was supplied, else the CSV content
+            as bytes.
+
+        Example (one month to disk):
+            >>> client.export_odds_history(
+            ...     sport="baseball_mlb",
+            ...     since="2026-04-01T00:00:00Z",
+            ...     until="2026-05-01T00:00:00Z",
+            ...     out_path="./mlb-line-history-apr.csv",
+            ... )
+        """
+        params: dict[str, Any] = {"sport": sport}
+        if market:
+            params["market"] = market
+        if bookmaker:
+            params["bookmaker"] = bookmaker
+        if since:
+            params["since"] = since
+        if until:
+            params["until"] = until
+
+        url = f"{self.base_url}/exports/odds-history"
+        with self._client.stream("GET", url, params=params) as resp:
+            if resp.status_code == 401:
+                raise AuthError(401, "Invalid API key")
+            if resp.status_code == 403:
+                resp.read()
+                detail = resp.json().get(
+                    "detail", "Historical Backfill pass or Enterprise required"
+                )
+                raise PropLineError(403, detail)
+            if resp.status_code >= 400:
+                resp.read()
+                raise PropLineError(resp.status_code, resp.text)
+
+            if out_path:
+                with open(out_path, "wb") as f:
+                    for chunk in resp.iter_bytes():
+                        f.write(chunk)
+                return out_path
+            return b"".join(resp.iter_bytes())
+
     def get_resolution_summary(self, days: int = 30) -> dict:
         """
         Factual volume of graded player props over the last N days.

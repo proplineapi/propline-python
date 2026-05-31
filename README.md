@@ -361,6 +361,21 @@ hit_rate = (df.query("outcome_name == 'Over' and resolution == 'won'").shape[0]
 print(f"Over hit rate across all MLB markets: {hit_rate:.1%}")
 ```
 
+### Full line-movement history (Historical Backfill / Enterprise)
+
+```python
+# Every recorded snapshot (price + line, per book) — not just the close.
+# The raw tick history no subscription tier can bulk-pull; exclusive to
+# the one-time Historical Backfill pass and Enterprise. Page month by
+# month — a full archive runs to gigabytes per sport.
+client.export_odds_history(
+    sport="baseball_mlb",
+    since="2026-04-01T00:00:00Z",
+    until="2026-05-01T00:00:00Z",
+    out_path="./mlb-line-history-apr.csv",
+)
+```
+
 ## Webhooks (Streaming tier)
 
 The Streaming tier ($79/mo) pushes `line_movement` and `resolution` events

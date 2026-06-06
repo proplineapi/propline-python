@@ -509,6 +509,53 @@ class PropLine:
             "GET", f"/sports/{sport}/events/{event_id}/context"
         )
 
+    def get_movement(
+        self,
+        sport: str,
+        event_id: int | str,
+        markets: list[str] | None = None,
+        period: str | None = None,
+    ) -> dict:
+        """
+        Get line movement + steam detection from the snapshot tick history.
+
+        For each (book, market, outcome) returns the opening line, the latest
+        line, the signed implied-probability shift (positive = the book
+        shortened the outcome / money moved toward it), the point shift, and
+        a direction. The top-level ``steam`` array flags outcomes that
+        multiple books moved in the same direction — the sharp-money signal,
+        computed across every book PropLine polls. Unique to PropLine
+        (pull-only APIs can't produce it). Hobby+ full; free tier redacted.
+
+        Args:
+            sport: Sport key (e.g. "baseball_mlb")
+            event_id: Event ID
+            markets: Optional list of market keys (default h2h, spreads, totals)
+            period: Optional game-period filter ("q1", "h1", "p1", "f5", "all")
+
+        Returns:
+            A dict with ``bookmakers`` (per-book/market/outcome movement) and
+            ``steam`` (detected steam moves with ``steam_score``). When a book
+            moves the line itself, that outcome's ``prob_shift`` is null and
+            ``direction`` is ``"line_moved"`` (excluded from the steam signal).
+
+        Example:
+            >>> mv = client.get_movement("baseball_mlb", 37464)
+            >>> for s in mv["steam"]:
+            ...     print(f"{s['name']} {s['consensus_direction']} "
+            ...           f"({s['books_moved']}/{s['books_quoting']} books, "
+            ...           f"score {s['steam_score']})")
+        """
+        params: dict[str, str] = {}
+        if markets:
+            params["markets"] = ",".join(markets)
+        if period:
+            params["period"] = period
+
+        return self._request(
+            "GET", f"/sports/{sport}/events/{event_id}/movement", params=params
+        )
+
     def get_results(
         self,
         sport: str,

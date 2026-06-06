@@ -203,6 +203,21 @@ outdoor / open-roof venues. The same block is embedded in
 PropLine. Free tier. MLB today; weather extends to other outdoor sports
 next. Raises on `404` when no context is on file for the event yet.
 
+### Get line movement & steam (Hobby+)
+
+```python
+mv = client.get_movement("baseball_mlb", event_id=37464)
+for s in mv["steam"]:
+    print(f"{s['name']} {s['consensus_direction']} "
+          f"({s['books_moved']}/{s['books_quoting']} books, score {s['steam_score']})")
+```
+
+Line movement derived from our snapshot tick history. Per (book, market,
+outcome): opening line, latest line, implied-probability + point shift,
+direction. The `steam` array flags outcomes multiple books moved the same
+direction — the sharp-money signal across every book we poll. Unique to
+PropLine. Hobby+ full; free tier redacted.
+
 ### Get resolution coverage summary (free)
 
 ```python

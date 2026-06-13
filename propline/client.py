@@ -719,9 +719,10 @@ class PropLine:
     def get_futures(self, sport: str) -> list[dict]:
         """
         List futures markets for a sport — championship winner, MVP,
-        division winner, etc. Each row is one (futures event, book,
-        market) with every team or player priced. Free tier; pulled
-        from each book's futures feed (Bovada today).
+        division winner, season win totals, etc. Each row is one (futures
+        event, book, market) with every team or player priced. Free tier;
+        aggregated across each book's futures feed (Bovada, FanDuel,
+        DraftKings, and Pinnacle).
 
         Args:
             sport: Sport key (e.g. "baseball_mlb", "basketball_nba").

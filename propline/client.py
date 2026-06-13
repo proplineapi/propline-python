@@ -158,6 +158,14 @@ class PropLine:
             array to compare prices across books without making separate
             requests.
 
+            Underdog Fantasy outcomes carry an extra ``payout_multiplier``
+            key — a DFS boost/discount factor. It is ``None`` on a standard
+            pick (the quoted ``price`` carries the full payout) and a float
+            such as ``1.5`` (boost) or ``0.75`` (discount) on a "special".
+            Skip outcomes with a non-null multiplier when comparing DFS
+            lines to sportsbook consensus so a scaled payout doesn't read
+            as a mispriced edge.
+
         Example:
             >>> odds = client.get_odds("basketball_nba", event_id=21,
             ...     markets=["player_points", "player_rebounds"])

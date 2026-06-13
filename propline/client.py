@@ -474,14 +474,17 @@ class PropLine:
         """
         Get game context — the conditions a prop settles under.
 
-        Returns probable starting pitchers, a confirmed-lineup flag, the
-        home-plate umpire, and first-pitch weather (temperature, wind,
-        precipitation, conditions) for outdoor / open-roof venues. Indoor
+        For MLB: probable starting pitchers and their throwing hand
+        (``home_probable_pitcher_hand`` / ``away_probable_pitcher_hand`` —
+        "L"/"R"/"S", the platoon-split context behind every batter prop), a
+        confirmed-lineup flag, the home-plate umpire, and first-pitch weather
+        (temperature, wind, precipitation, conditions) for outdoor / open-roof
+        venues. For NFL & NCAAF: the venue and kickoff weather (the
+        pitcher/umpire/lineup fields are ``None`` for football). Indoor
         or domed venues return ``weather=None`` with ``is_indoor=True``.
         The same context is embedded in :meth:`get_results`, so every
         graded prop carries the conditions it settled against — unique to
-        PropLine. Free tier. MLB today; weather extends to other outdoor
-        sports next.
+        PropLine. Free tier.
 
         Args:
             sport: Sport key (e.g. "baseball_mlb")
@@ -490,8 +493,9 @@ class PropLine:
         Returns:
             A context dict: event_id, sport_key, home_team, away_team,
             commence_time, venue, roof_type, is_indoor,
-            home_probable_pitcher, away_probable_pitcher, lineup_confirmed,
-            home_plate_umpire, weather, updated_at.
+            home_probable_pitcher, away_probable_pitcher,
+            home_probable_pitcher_hand, away_probable_pitcher_hand,
+            lineup_confirmed, home_plate_umpire, weather, updated_at.
 
         Raises:
             PropLineError: 404 when no context is on file for the event yet

@@ -189,19 +189,23 @@ for game in scores:
 
 ```python
 ctx = client.get_context("baseball_mlb", event_id=37464)
-print(f"{ctx['away_probable_pitcher']} @ {ctx['home_probable_pitcher']}")
+print(f"{ctx['away_probable_pitcher']} ({ctx['away_probable_pitcher_hand']}) @ "
+      f"{ctx['home_probable_pitcher']} ({ctx['home_probable_pitcher_hand']})")
 print(f"Umpire: {ctx['home_plate_umpire']}  Lineup set: {ctx['lineup_confirmed']}")
 if ctx["weather"]:
     w = ctx["weather"]
     print(f"{w['temperature_f']}F, wind {w['wind_speed_mph']}mph {w['wind_direction']}, {w['conditions']}")
 ```
 
-The conditions a prop settles under — probable starting pitchers, a
-confirmed-lineup flag, the home-plate umpire, and first-pitch weather at
-outdoor / open-roof venues. The same block is embedded in
-`get_results()`, so every graded prop carries its conditions — unique to
-PropLine. Free tier. MLB today; weather extends to other outdoor sports
-next. Raises on `404` when no context is on file for the event yet.
+The conditions a prop settles under. For MLB: probable starting pitchers
+and their throwing hand (`home_probable_pitcher_hand` /
+`away_probable_pitcher_hand`, "L"/"R"/"S" — platoon-split context for every
+batter prop), a confirmed-lineup flag, the home-plate umpire, and
+first-pitch weather at outdoor / open-roof venues. For NFL & NCAAF: the
+venue and kickoff weather (pitcher/umpire/lineup fields are `None` for
+football). The same block is embedded in `get_results()`, so every graded
+prop carries its conditions — unique to PropLine. Free tier. Raises on
+`404` when no context is on file for the event yet.
 
 ### Get line movement & steam (Hobby+)
 

@@ -17,5 +17,5 @@ class Bookmaker:
     PRIZEPICKS = "prizepicks"
 
 
-__version__ = "0.20.0"
+__version__ = "0.21.0"
 __all__ = ["PropLine", "Bookmaker"]

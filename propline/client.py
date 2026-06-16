@@ -166,6 +166,15 @@ class PropLine:
             lines to sportsbook consensus so a scaled payout doesn't read
             as a mispriced edge.
 
+            PrizePicks outcomes carry ``dfs_odds_type`` instead — the
+            projection flavor: ``"standard"`` (the true market line),
+            ``"goblin"`` (easier line / lower payout) or ``"demon"`` (harder
+            line / higher payout); ``None`` for traditional sportsbooks.
+            Filter to ``"standard"`` to get PrizePicks's market line —
+            goblin/demon variants arrive as their own per-line markets (e.g.
+            ``"Points (demon 27.5)"``) so they never overwrite it. PrizePicks
+            publishes no numeric multiplier for these.
+
         Example:
             >>> odds = client.get_odds("basketball_nba", event_id=21,
             ...     markets=["player_points", "player_rebounds"])

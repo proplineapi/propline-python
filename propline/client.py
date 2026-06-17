@@ -368,6 +368,46 @@ class PropLine:
             "GET", f"/sports/{sport}/scores", params={"days_from": days_from}
         )
 
+    def get_dfs_payouts(
+        self,
+        platform: str = "prizepicks",
+        leg_win_prob: float | None = None,
+    ) -> dict:
+        """
+        Get the PrizePicks Power/Flex payout schedule + per-leg breakeven.
+
+        Returns the entry payout schedule for 2-6 legs of each play type
+        (power = all legs must hit; flex = partial payouts) plus the per-leg
+        win probability needed to break even on each.
+
+        Args:
+            platform: DFS platform. Only "prizepicks" is available today.
+            leg_win_prob: Optional assumed per-leg win probability in [0, 1].
+                When supplied, each play also carries ``expected_return``
+                (per $1 staked) and ``is_plus_ev`` at that rate.
+
+        Returns:
+            Dict with keys: ``platform``, ``leg_win_prob``, ``disclaimer``,
+            and ``plays`` (a list of {play_type, legs, all_correct_multiplier,
+            payouts, breakeven_leg_win_prob[, expected_return, is_plus_ev]}).
+
+        Note:
+            These are PrizePicks's *standard* published payouts. demon/goblin
+            picks adjust an entry's payout per-pick and are NOT in PrizePicks's
+            feed, so they are not reflected here. Breakeven assumes independent
+            legs. See the ``disclaimer`` field on the response.
+
+        Example:
+            >>> tbl = client.get_dfs_payouts(leg_win_prob=0.58)
+            >>> for play in tbl["plays"]:
+            ...     print(play["play_type"], play["legs"],
+            ...           "breakeven", play["breakeven_leg_win_prob"])
+        """
+        params: dict = {"platform": platform}
+        if leg_win_prob is not None:
+            params["leg_win_prob"] = leg_win_prob
+        return self._request("GET", "/dfs/payouts", params=params)
+
     def get_mlb_grand_salami(
         self,
         date: str | None = None,

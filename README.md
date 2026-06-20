@@ -346,7 +346,9 @@ for e in hist["entries"]:
 # "How often has Aaron Judge gone over his total bases line lately?"
 # Rolling Over/Under splits over the last 5/10/20/50 graded games,
 # plus current streak and most-recent line/actual. Omit `market` for
-# trends across every market the player has graded games in.
+# trends across every market the player has graded games in. Pass
+# `dfs_odds_type="standard"|"goblin"|"demon"` to compute the trend
+# against that PrizePicks flavor's line only.
 trends = client.get_player_trends("baseball_mlb", "Aaron Judge",
     market="batter_total_bases")
 

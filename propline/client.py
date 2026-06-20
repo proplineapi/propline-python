@@ -175,6 +175,15 @@ class PropLine:
             ``"Points (demon 27.5)"``) so they never overwrite it. PrizePicks
             publishes no numeric multiplier for these.
 
+            Every outcome also carries ``last_change_at`` — PropLine's
+            observed timestamp of the last time that outcome's price actually
+            changed. Unlike ``book_updated_at`` (the book's own publish-time,
+            Bovada-only), ``last_change_at`` is populated for every book,
+            including Pinnacle and PrizePicks. Compare it across books in a
+            single call to detect repricing lag (e.g. Pinnacle just moved but
+            a slower book's ``last_change_at`` is older) without a separate
+            ``get_odds_history`` call per event.
+
         Example:
             >>> odds = client.get_odds("basketball_nba", event_id=21,
             ...     markets=["player_points", "player_rebounds"])
@@ -716,6 +725,7 @@ class PropLine:
         sport: str,
         player_name: str,
         market: str | None = None,
+        dfs_odds_type: str | None = None,
     ) -> dict:
         """
         Get a player's hit-rate trends across recent graded games.
@@ -737,9 +747,16 @@ class PropLine:
             market: Optional market key (e.g. "batter_total_bases",
                 "player_points"). If omitted, returns trends for every market
                 the player has graded games in.
+            dfs_odds_type: Optional PrizePicks pick-em flavor — "standard",
+                "goblin", or "demon". When set, the trend is computed against
+                that flavor's PrizePicks line only (e.g. compare a player's
+                goblin-line hit-rate against his standard-line trend). Omitted
+                gives the default cross-book behavior. Flavor tagging began
+                2026-06-16, so per-flavor trends only have depth from then on.
 
         Returns:
-            Dict with keys: player_name, sport_key, markets, upgrade_url.
+            Dict with keys: player_name, sport_key, dfs_odds_type (echo of the
+            filter, or None), markets, upgrade_url.
             Each market entry: market, games_graded, reference_bookmaker,
             reference_bookmaker_title, recent_line, avg_actual, last_5,
             last_10, last_20, last_50, current_streak, last_game, redacted.
@@ -758,6 +775,8 @@ class PropLine:
         params: dict[str, Any] = {}
         if market:
             params["market"] = market
+        if dfs_odds_type:
+            params["dfs_odds_type"] = dfs_odds_type
 
         return self._request(
             "GET",

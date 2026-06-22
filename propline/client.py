@@ -173,7 +173,12 @@ class PropLine:
             Filter to ``"standard"`` to get PrizePicks's market line —
             goblin/demon variants arrive as their own per-line markets (e.g.
             ``"Points (demon 27.5)"``) so they never overwrite it. PrizePicks
-            publishes no numeric multiplier for these.
+            publishes no numeric multiplier for these. Each goblin/demon
+            outcome also carries ``line_gap`` — the signed delta from that
+            player+stat's standard line (``point - standard_point``; positive
+            on a harder demon line, negative on an easier goblin line; ``None``
+            when there's no standard counterpart). Flavor + ``line_gap`` are
+            the modelable signals for fitting per-pick payout adjustments.
 
             Every outcome also carries ``last_change_at`` — PropLine's
             observed timestamp of the last time that outcome's price actually

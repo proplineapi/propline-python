@@ -121,6 +121,7 @@ class PropLine:
         event_id: int | str | None = None,
         markets: list[str] | None = None,
         period: str | list[str] | None = None,
+        bookmakers: str | list[str] | None = None,
     ) -> dict | list[dict]:
         """
         Get current odds. If event_id is provided, returns odds for that event
@@ -129,6 +130,9 @@ class PropLine:
         Args:
             sport: Sport key (e.g. "baseball_mlb")
             event_id: Optional event ID for single-event odds with player props
+            bookmakers: Optional bookmaker key(s) to restrict the response to
+                (e.g. ``"draftkings"`` or ``["draftkings", "fanduel"]``).
+                Omitted = all books. Same parameter name as the-odds-api.
             markets: List of market keys to filter by. If omitted, the
                 bulk /odds endpoint defaults to ``h2h`` and the per-event
                 /odds endpoint defaults to ``h2h,spreads,totals`` —
@@ -204,6 +208,10 @@ class PropLine:
             params["markets"] = ",".join(markets)
         if period is not None:
             params["period"] = period if isinstance(period, str) else ",".join(period)
+        if bookmakers:
+            params["bookmakers"] = (
+                bookmakers if isinstance(bookmakers, str) else ",".join(bookmakers)
+            )
 
         if event_id is not None:
             return self._request("GET", f"/sports/{sport}/events/{event_id}/odds", params=params)
@@ -244,6 +252,7 @@ class PropLine:
         interval: str | None = None,
         changes_only: bool = False,
         period: str | list[str] | None = None,
+        bookmakers: str | list[str] | None = None,
     ) -> dict:
         """
         Get historical odds movement for an event.
@@ -300,6 +309,10 @@ class PropLine:
             params["changes_only"] = "true"
         if period is not None:
             params["period"] = period if isinstance(period, str) else ",".join(period)
+        if bookmakers:
+            params["bookmakers"] = (
+                bookmakers if isinstance(bookmakers, str) else ",".join(bookmakers)
+            )
 
         return self._request(
             "GET", f"/sports/{sport}/events/{event_id}/odds/history", params=params
@@ -311,6 +324,7 @@ class PropLine:
         event_id: int | str,
         markets: list[str] | None = None,
         period: str | list[str] | None = None,
+        bookmakers: str | list[str] | None = None,
     ) -> dict:
         """
         Get the closing line per (book, market, outcome) for an event.
@@ -350,6 +364,10 @@ class PropLine:
             params["markets"] = ",".join(markets)
         if period is not None:
             params["period"] = period if isinstance(period, str) else ",".join(period)
+        if bookmakers:
+            params["bookmakers"] = (
+                bookmakers if isinstance(bookmakers, str) else ",".join(bookmakers)
+            )
 
         return self._request(
             "GET", f"/sports/{sport}/events/{event_id}/odds/closing", params=params
@@ -590,6 +608,7 @@ class PropLine:
         event_id: int | str,
         markets: list[str] | None = None,
         period: str | None = None,
+        bookmakers: str | list[str] | None = None,
     ) -> dict:
         """
         Get line movement + steam detection from the snapshot tick history.
@@ -626,6 +645,10 @@ class PropLine:
             params["markets"] = ",".join(markets)
         if period:
             params["period"] = period
+        if bookmakers:
+            params["bookmakers"] = (
+                bookmakers if isinstance(bookmakers, str) else ",".join(bookmakers)
+            )
 
         return self._request(
             "GET", f"/sports/{sport}/events/{event_id}/movement", params=params

@@ -148,6 +148,20 @@ for event in events:
 
 ### Filter to game-period markets
 
+Every odds endpoint (`get_odds`, `get_odds_history`, `get_odds_closing`,
+`get_movement`) also accepts a `bookmakers=` kwarg — a bookmaker key or
+list of keys, same parameter name as the-odds-api — to restrict the
+response to specific books:
+
+```python
+# Only DraftKings + FanDuel lines
+odds = client.get_odds(
+    "baseball_mlb", event_id=12345,
+    markets=["pitcher_strikeouts"],
+    bookmakers=["draftkings", "fanduel"],
+)
+```
+
 Every odds endpoint accepts a `period=` kwarg to scope results to
 first-quarter / first-half / first-period / first-N-innings markets. Omit
 it for full-game markets — the default behavior is unchanged.

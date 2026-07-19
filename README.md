@@ -394,6 +394,27 @@ for line in ev["lines"]:
                   f"{o['price']:+5d}  ev=+{o['ev_pct']}%")
 ```
 
+### Best line — cross-book line shopping (Hobby+)
+
+```python
+# You've decided the bet — now find which book pays the most.
+bl = client.get_event_best_line("baseball_mlb", 12345,
+    markets="pitcher_strikeouts",
+    bookmakers=["draftkings", "fanduel", "bovada"])  # only my books
+
+for line in bl["lines"]:
+    for side, info in line["sides"].items():
+        best = info["best"]
+        print(f"{line['description']:24s} {side:6s} {line['point']}: "
+              f"{best['price']:+5d} @ {best['book_title']} "
+              f"(of {len(info['all_prices'])} books)")
+```
+
+DFS pick'em books (PrizePicks, Sleeper, Dabble) are excluded — their
+quotes aren't independently bettable payouts; Underdog is included only
+at clean two-way lines. Each price carries `last_update` so you can
+discount stale quotes.
+
 ### Bulk CSV export of resolved props (Pro)
 
 ```python

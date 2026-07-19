@@ -900,20 +900,22 @@ class PropLine:
         sport: str,
         event_id: int | str,
         markets: str | list[str] | None = None,
+        bookmakers: str | list[str] | None = None,
     ) -> dict:
         """
         Cross-book best-line lookup for a single event.
 
         For each (market, player, line) tuple, returns the single best
-        American price across every book we carry, with the book name
-        attached. Companion to get_event_ev: best-line tells you which
-        book has the highest payout right now; +EV tells you whether
-        that price beats a sharp no-vig fair line. Most line shoppers
-        want both.
+        American price across every comparable book we carry, with the
+        book name attached. Companion to get_event_ev: best-line tells
+        you which book has the highest payout right now; +EV tells you
+        whether that price beats a sharp no-vig fair line. Most line
+        shoppers want both.
 
-        PrizePicks is excluded from the comparison — its DFS payout
-        structure (synthetic +100/+100 quotes) isn't directly
-        comparable to traditional sportsbook odds.
+        DFS pick'em books (PrizePicks, Sleeper, Dabble) are excluded —
+        their quotes aren't independently bettable payouts; Underdog is
+        included only at its clean two-way lines
+        (payout_multiplier == 1.0).
 
         Hobby tier or higher required (returns 403 on free).
 
@@ -923,6 +925,10 @@ class PropLine:
             markets: Optional comma-separated string or list of market
                 keys to evaluate (e.g. ["pitcher_strikeouts", "h2h"]).
                 Omit to include every market on the event.
+            bookmakers: Optional comma-separated string or list of book
+                keys (e.g. ["draftkings", "fanduel"]) — shop only the
+                books you hold accounts at. Omit for all comparable
+                books.
 
         Returns:
             Dict with keys: id, sport_key, home_team, away_team,
@@ -931,8 +937,9 @@ class PropLine:
             sides. `sides` is a dict mapping side name (e.g. "Over",
             "Under", or a team name) to a dict with `best` (single
             BestPrice) and `all_prices` (list of BestPrice sorted
-            best-first). Each BestPrice has `book`, `book_title`,
-            `price`.
+            best-first, one row per book). Each BestPrice has `book`,
+            `book_title`, `price`, `last_update` (when that book last
+            refreshed the market — discount stale quotes).
 
         Example:
             >>> bl = client.get_event_best_line("baseball_mlb", 12345)
@@ -945,6 +952,10 @@ class PropLine:
         if markets:
             params["markets"] = (
                 ",".join(markets) if isinstance(markets, list) else markets
+            )
+        if bookmakers:
+            params["bookmakers"] = (
+                ",".join(bookmakers) if isinstance(bookmakers, list) else bookmakers
             )
         return self._request(
             "GET",

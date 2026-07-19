@@ -917,7 +917,10 @@ class PropLine:
         included only at its clean two-way lines
         (payout_multiplier == 1.0).
 
-        Hobby tier or higher required (returns 403 on free).
+        Hobby tier or higher sees prices. Free tier gets a redacted
+        teaser: the full structure — every line, side, book identity,
+        and the best-first ranking — with every price set to None, plus
+        ``redacted: True`` and an ``upgrade_url``.
 
         Args:
             sport: Sport key (e.g. "baseball_mlb").

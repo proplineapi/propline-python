@@ -553,11 +553,27 @@ try:
     odds = client.get_odds("baseball_mlb", event_id=1)
 except AuthError:
     print("Invalid API key")
-except RateLimitError:
-    print("Daily limit exceeded — upgrade at prop-line.com/#pricing")
+except RateLimitError as e:
+    # Daily-cap 429s include a pre-filled one-click upgrade URL
+    print(f"Rate limited: {e.message}")
+    if e.upgrade_url:
+        print(f"Upgrade: {e.upgrade_url}")
 except PropLineError as e:
-    print(f"API error: {e.status_code} — {e.detail}")
+    print(f"API error: {e.status_code} — {e.message}")
 ```
+
+Gated and throttled endpoints return a structured error body
+([docs](https://prop-line.com/docs#errors)); its fields are exposed as
+attributes on every `PropLineError`:
+
+| Attribute | Meaning |
+|---|---|
+| `error_code` | Stable machine-readable code: `upgrade_required`, `daily_limit_exceeded`, `burst_limit_exceeded`, `missing_api_key`, `invalid_api_key` (None on plain errors) |
+| `message` | Human-readable sentence (also `str(err)`) |
+| `required_tier` | Cheapest tier that unlocks a gated feature (403s) |
+| `upgrade_url` | Where to unlock it — pre-filled one-click URL on daily-cap 429s |
+| `retry_after_seconds` | Burst-limit backoff hint (429s) |
+| `detail` | The raw API value — dict when structured, str otherwise |
 
 ## Links
 

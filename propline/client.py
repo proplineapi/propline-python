@@ -32,12 +32,40 @@ import httpx
 
 
 class PropLineError(Exception):
-    """Base exception for PropLine API errors."""
+    """Base exception for PropLine API errors.
 
-    def __init__(self, status_code: int, detail: str):
+    Gated and throttled endpoints return a structured ``detail`` object
+    (see https://prop-line.com/docs#errors). When present, its fields are
+    exposed as attributes so callers can branch on ``error_code`` and
+    follow ``upgrade_url`` instead of parsing prose:
+
+    - ``error_code``: stable machine-readable code, e.g. ``"upgrade_required"``,
+      ``"daily_limit_exceeded"``, ``"burst_limit_exceeded"``, ``"invalid_api_key"``
+    - ``message``: the human-readable sentence (also used as ``str(err)``)
+    - ``required_tier``: cheapest tier that unlocks a gated feature
+    - ``upgrade_url``: where to unlock it (pre-filled for daily-cap 429s)
+    - ``retry_after_seconds``: burst-limit backoff hint
+    - ``detail``: the raw value the API returned (dict when structured,
+      str on older/plain errors) — unchanged for backwards compatibility
+    """
+
+    def __init__(self, status_code: int, detail):
         self.status_code = status_code
         self.detail = detail
-        super().__init__(f"[{status_code}] {detail}")
+        if isinstance(detail, dict):
+            self.error_code = detail.get("error")
+            self.message = detail.get("message") or str(detail)
+            recommended = detail.get("recommended") or {}
+            self.upgrade_url = detail.get("upgrade_url") or recommended.get("upgrade_url")
+            self.required_tier = detail.get("required_tier")
+            self.retry_after_seconds = detail.get("retry_after_seconds")
+        else:
+            self.error_code = None
+            self.message = str(detail)
+            self.upgrade_url = None
+            self.required_tier = None
+            self.retry_after_seconds = None
+        super().__init__(f"[{status_code}] {self.message}")
 
 
 class RateLimitError(PropLineError):

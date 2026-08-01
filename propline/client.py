@@ -26,9 +26,35 @@ from __future__ import annotations
 
 import hashlib
 import hmac
+from dataclasses import dataclass
+from datetime import datetime, timezone
 from typing import Any
 
 import httpx
+
+
+@dataclass(frozen=True)
+class QuotaStatus:
+    """Live daily-quota state, parsed from the ``X-Daily-*`` headers the API
+    returns on every authenticated response.
+
+    Attributes:
+        limit: Your tier's daily request cap.
+        used: Requests used today (including the request that produced this).
+        remaining: Requests left before the cap.
+        reset_epoch: Unix seconds when the quota resets (00:00 UTC — a hard
+            reset, not a rolling window).
+    """
+
+    limit: int
+    used: int
+    remaining: int
+    reset_epoch: int
+
+    @property
+    def reset_at(self) -> datetime:
+        """Quota reset time as a timezone-aware UTC datetime."""
+        return datetime.fromtimestamp(self.reset_epoch, tz=timezone.utc)
 
 
 class PropLineError(Exception):
@@ -96,13 +122,33 @@ class PropLine:
     ):
         self.api_key = api_key
         self.base_url = base_url.rstrip("/")
+        #: Daily-quota state from the most recent API response, or ``None``
+        #: before the first request. Updated on every call (including 429s):
+        #:     >>> client.get_sports()
+        #:     >>> client.last_quota.remaining
+        #:     999
+        self.last_quota: QuotaStatus | None = None
         self._client = httpx.Client(
             headers={"X-API-Key": api_key},
             timeout=httpx.Timeout(timeout),
         )
 
+    def _capture_quota(self, resp: httpx.Response) -> None:
+        """Record the X-Daily-* quota headers when present (absent on
+        unauthenticated errors, e.g. an invalid key's 401)."""
+        try:
+            self.last_quota = QuotaStatus(
+                limit=int(resp.headers["X-Daily-Limit"]),
+                used=int(resp.headers["X-Daily-Used"]),
+                remaining=int(resp.headers["X-Daily-Remaining"]),
+                reset_epoch=int(resp.headers["X-Daily-Reset"]),
+            )
+        except (KeyError, ValueError):
+            pass
+
     def _request(self, method: str, path: str, **kwargs) -> Any:
         resp = self._client.request(method, f"{self.base_url}{path}", **kwargs)
+        self._capture_quota(resp)
 
         if resp.status_code == 401:
             raise AuthError(401, resp.json().get("detail", "Invalid API key"))
@@ -1119,6 +1165,7 @@ class PropLine:
 
         url = f"{self.base_url}/exports/resolved-props"
         with self._client.stream("GET", url, params=params) as resp:
+            self._capture_quota(resp)
             if resp.status_code == 401:
                 raise AuthError(401, "Invalid API key")
             if resp.status_code == 403:
@@ -1192,6 +1239,7 @@ class PropLine:
 
         url = f"{self.base_url}/exports/odds-history"
         with self._client.stream("GET", url, params=params) as resp:
+            self._capture_quota(resp)
             if resp.status_code == 401:
                 raise AuthError(401, "Invalid API key")
             if resp.status_code == 403:

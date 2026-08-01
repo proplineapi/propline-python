@@ -575,7 +575,25 @@ attributes on every `PropLineError`:
 | `retry_after_seconds` | Burst-limit backoff hint (429s) |
 | `detail` | The raw API value — dict when structured, str otherwise |
 
+## Tracking Your Usage
+
+Every authenticated response carries live quota headers; the client parses
+them into `client.last_quota` automatically:
+
+```python
+client.get_sports()
+
+q = client.last_quota
+print(f"{q.used}/{q.limit} used today, {q.remaining} left")
+print(f"Quota resets at {q.reset_at.isoformat()}")  # 00:00 UTC, hard reset
+```
+
+`last_quota` is `None` before the first request and refreshes on every call
+(including 429s), so a long-running poller can watch `remaining` and back
+off before hitting the daily cap.
+
 ## Links
+
 
 - **Website**: [prop-line.com](https://prop-line.com/?ref=pypi)
 - **API Docs**: [prop-line.com/docs](https://prop-line.com/docs)

@@ -1,6 +1,12 @@
 """PropLine — Python SDK for the PropLine player props API."""
 
-from propline.client import PropLine
+from propline.client import (
+    AuthError,
+    PropLine,
+    PropLineError,
+    QuotaStatus,
+    RateLimitError,
+)
 
 
 class Bookmaker:
@@ -17,5 +23,12 @@ class Bookmaker:
     PRIZEPICKS = "prizepicks"
 
 
-__version__ = "0.29.0"
-__all__ = ["PropLine", "Bookmaker"]
+__version__ = "0.30.0"
+__all__ = [
+    "PropLine",
+    "Bookmaker",
+    "QuotaStatus",
+    "PropLineError",
+    "RateLimitError",
+    "AuthError",
+]

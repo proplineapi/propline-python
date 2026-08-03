@@ -196,6 +196,7 @@ class PropLine:
         markets: list[str] | None = None,
         period: str | list[str] | None = None,
         bookmakers: str | list[str] | None = None,
+        include_links: bool = False,
     ) -> dict | list[dict]:
         """
         Get current odds. If event_id is provided, returns odds for that event
@@ -207,6 +208,13 @@ class PropLine:
             bookmakers: Optional bookmaker key(s) to restrict the response to
                 (e.g. ``"draftkings"`` or ``["draftkings", "fanduel"]``).
                 Omitted = all books. Same parameter name as the-odds-api.
+            include_links: When True, each bookmaker block carries a
+                ``link`` — that book's public event-page URL (plain
+                navigation, no affiliate tagging), so your UI can click
+                out from a line to the book. Links ship for Bovada,
+                DraftKings, FanDuel, BetMGM, Kalshi, Polymarket and
+                Smarkets; other books return ``None``. Maps to the
+                the-odds-api-compatible ``includeLinks=true`` query param.
             markets: List of market keys to filter by. If omitted, the
                 bulk /odds endpoint defaults to ``h2h`` and the per-event
                 /odds endpoint defaults to ``h2h,spreads,totals`` —
@@ -286,6 +294,8 @@ class PropLine:
             params["bookmakers"] = (
                 bookmakers if isinstance(bookmakers, str) else ",".join(bookmakers)
             )
+        if include_links:
+            params["includeLinks"] = "true"
 
         if event_id is not None:
             return self._request("GET", f"/sports/{sport}/events/{event_id}/odds", params=params)
@@ -975,6 +985,7 @@ class PropLine:
         event_id: int | str,
         markets: str | list[str] | None = None,
         bookmakers: str | list[str] | None = None,
+        include_links: bool = False,
     ) -> dict:
         """
         Cross-book best-line lookup for a single event.
@@ -1006,6 +1017,11 @@ class PropLine:
                 keys (e.g. ["draftkings", "fanduel"]) — shop only the
                 books you hold accounts at. Omit for all comparable
                 books.
+            include_links: When True, every price row carries a ``link``
+                — that book's public event-page URL, the click-out for
+                "go bet this". Books without a verified URL template
+                return ``None``. Links appear on free-tier redacted
+                responses too (navigation isn't the paid data).
 
         Returns:
             Dict with keys: id, sport_key, home_team, away_team,
@@ -1034,6 +1050,8 @@ class PropLine:
             params["bookmakers"] = (
                 ",".join(bookmakers) if isinstance(bookmakers, list) else bookmakers
             )
+        if include_links:
+            params["includeLinks"] = "true"
         return self._request(
             "GET",
             f"/sports/{sport}/events/{event_id}/best-line",

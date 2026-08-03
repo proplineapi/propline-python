@@ -166,6 +166,24 @@ Every odds endpoint accepts a `period=` kwarg to scope results to
 first-quarter / first-half / first-period / first-N-innings markets. Omit
 it for full-game markets — the default behavior is unchanged.
 
+### Event-page links (click out to the book)
+
+`get_odds` and `get_event_best_line` accept `include_links=True` — each
+bookmaker block (odds) or price row (best-line) then carries a `link`:
+that book's public event-page URL, so your UI can click out from a line
+straight to the book. Plain navigation, no affiliate tagging. Links ship
+for Bovada, DraftKings, FanDuel, BetMGM, Kalshi, Polymarket and
+Smarkets; other books return `None`.
+
+```python
+bl = client.get_event_best_line(
+    "baseball_mlb", 12345, include_links=True)
+for line in bl["lines"]:
+    for side, info in line["sides"].items():
+        best = info["best"]
+        print(f"{side}: {best['price']} @ {best['book_title']} -> {best['link']}")
+```
+
 ```python
 # First-quarter NBA totals
 q1 = client.get_odds(

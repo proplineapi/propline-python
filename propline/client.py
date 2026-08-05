@@ -611,6 +611,12 @@ class PropLine:
         Returns raw stat values that can be used to resolve props against
         any sportsbook's lines — not tied to any specific book.
 
+        Live during games for major US sports (MLB + WNBA now; NFL, NCAAF,
+        NBA, NHL at season start): while the event's status is
+        "in_progress", stats refresh roughly every 90 seconds with
+        cumulative in-game values — treat them as partial until status
+        flips to "final". Other sports populate stats at game completion.
+
         Args:
             sport: Sport key (e.g. "soccer_epl", "baseball_mlb")
             event_id: Event ID

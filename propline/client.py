@@ -197,6 +197,7 @@ class PropLine:
         period: str | list[str] | None = None,
         bookmakers: str | list[str] | None = None,
         include_links: bool = False,
+        include_book_ids: bool = False,
     ) -> dict | list[dict]:
         """
         Get current odds. If event_id is provided, returns odds for that event
@@ -215,6 +216,23 @@ class PropLine:
                 DraftKings, FanDuel, BetMGM, Kalshi, Polymarket and
                 Smarkets; other books return ``None``. Maps to the
                 the-odds-api-compatible ``includeLinks=true`` query param.
+            include_book_ids: When True, each bookmaker block carries a
+                ``book_event_id`` and each outcome a ``book_outcome_id`` —
+                that book's OWN identifiers for the event and the priced
+                selection. Use these to join PropLine rows onto a book's
+                native feed by id instead of matching on team names,
+                players and lines. Kalshi ships both (the event ticker
+                and the per-contract market ticker, e.g.
+                ``KXMLBGAME-26AUG08NYYBOS-NYY``); most other books ship
+                an event id. Books without a stable id return ``None``.
+
+                Note a two-sided market can share ONE ``book_outcome_id``
+                across both legs — a Kalshi contract is binary, so Over
+                and Under are its YES and NO sides. The id identifies the
+                contract; the outcome's ``name`` says which side.
+
+                PropLine-specific (``includeBookIds=true``); the-odds-api
+                has no equivalent.
             markets: List of market keys to filter by. If omitted, the
                 bulk /odds endpoint defaults to ``h2h`` and the per-event
                 /odds endpoint defaults to ``h2h,spreads,totals`` —
@@ -296,6 +314,8 @@ class PropLine:
             )
         if include_links:
             params["includeLinks"] = "true"
+        if include_book_ids:
+            params["includeBookIds"] = "true"
 
         if event_id is not None:
             return self._request("GET", f"/sports/{sport}/events/{event_id}/odds", params=params)

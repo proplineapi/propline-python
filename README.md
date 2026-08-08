@@ -184,6 +184,37 @@ for line in bl["lines"]:
         print(f"{side}: {best['price']} @ {best['book_title']} -> {best['link']}")
 ```
 
+### Native book ids (join onto a book's own data)
+
+`get_odds` accepts `include_book_ids=True` — each bookmaker block then
+carries a `book_event_id` and each outcome a `book_outcome_id`: that
+book's OWN identifiers for the event and the priced selection. Use them
+to join PropLine rows onto a book's native feed by id, instead of
+fuzzy-matching team names, player names and lines.
+
+Kalshi ships both — the event ticker and the per-contract market ticker
+— which makes this the leg-level join key if you already pull Kalshi's
+own API. Most other books ship an event id; books without a stable
+public id return `None`.
+
+```python
+event = client.get_odds(
+    "baseball_mlb", event_id=12345,
+    markets=["h2h"],
+    include_book_ids=True,
+)
+for book in event["bookmakers"]:
+    print(book["key"], book["book_event_id"])
+    for m in book["markets"]:
+        for o in m["outcomes"]:
+            print("   ", o["name"], o["book_outcome_id"])
+```
+
+Note a two-sided market can share **one** `book_outcome_id` across both
+legs: a Kalshi contract is binary, so Over and Under are its YES and NO
+sides. The id identifies the contract; the outcome's `name` tells you
+which side.
+
 ```python
 # First-quarter NBA totals
 q1 = client.get_odds(

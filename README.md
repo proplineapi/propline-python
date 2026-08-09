@@ -62,6 +62,9 @@ for bookmaker in odds["bookmakers"]:
 | `mma_ufc` | UFC |
 | `boxing` | Boxing |
 
+> **Migrating from the-odds-api?** Their sport key names work as aliases (`americanfootball_nfl`, `icehockey_nhl`, `soccer_spain_la_liga`, `mma_mixed_martial_arts`, ...) so only the base URL changes. Aliases exist only where the competition is identical; anything else returns a structured 404 with `did_you_mean` rather than a silently-different feed.
+
+
 ## Bookmakers
 
 Every odds response returns a `bookmakers` array so you can compare lines
@@ -369,10 +372,12 @@ ts = client.get_odds_history(
 - `interval`: downsample to one snapshot per bucket; latest snapshot in each bucket wins.
 - `changes_only`: drop adjacent snapshots whose `(price, point)` match the previous one. Opening line is always kept.
 
-### Get closing line / CLV (Hobby+)
+### Get opening & closing lines / CLV (Hobby+)
 
-One call returns the last snapshot per `(book, market, outcome)` at or
-before `commence_time` — the canonical closing line for CLV tracking.
+One call returns **both ends of the move** per `(book, market, outcome)`:
+the last snapshot at or before `commence_time` (`price` / `point` /
+`closing_at`) and the first snapshot in the same 14-day pre-kickoff window
+(`opening_price` / `opening_point` / `opening_at`).
 
 ```python
 closing = client.get_odds_closing(
@@ -385,9 +390,20 @@ for book in closing["bookmakers"]:
         for o in m["outcomes"]:
             if o["description"] != "Bryan Woo" or o["name"] != "Over":
                 continue
-            print(f"{book['key']}: closed at {o['price']} ({o['closing_at']})")
+            print(f"{book['key']}: opened {o['opening_price']} @ {o['opening_point']}"
+                  f" -> closed {o['price']} @ {o['point']} ({o['closing_at']})")
             # Compare to your entry: -110 → closing -130 = +CLV
 ```
+
+Compare the **points**, not just the prices. On spreads and totals the
+number moves as much as the price (6.5 → 7.0), so a price-only comparison
+silently mis-measures those markets.
+
+`opening_age_seconds` is how long before kickoff the opener was recorded.
+The archive starts April 2026, so for a book/sport PropLine began polling
+after a line was posted, `opening_*` means *first observed by us* rather
+than the book's true open — a value in minutes rather than hours is the
+tell.
 
 ### Get player prop history (Pro full, Free redacted)
 
@@ -484,6 +500,25 @@ hit_rate = (df.query("outcome_name == 'Over' and resolution == 'won'").shape[0]
             / df.query("outcome_name == 'Over'").shape[0])
 print(f"Over hit rate across all MLB markets: {hit_rate:.1%}")
 ```
+
+Every row carries **both ends of the line move** alongside the graded
+result — `opening_price` / `opening_point` / `opening_at` (first line in
+the 14 days before kickoff) and `closing_price` / `closing_point` /
+`closing_at` (last line at or before it) — so a full CLV study is one
+download rather than one `/odds/closing` call per event:
+
+```python
+df = pd.read_csv(io.BytesIO(data))
+df = df[df.closing_price.notna() & df.opening_price.notna()]
+# Did the market move toward the Over after it opened?
+moved_to_over = df.query("outcome_name == 'Over' and closing_price < opening_price")
+print(moved_to_over.groupby("market").resolution.value_counts(normalize=True))
+```
+
+`closing_point` is distinct from `line` (the outcome's own current point);
+on spreads and totals they differ whenever the number moved. New columns
+are always appended immediately before `customer_token`, so positional
+parsers written against an earlier column set keep working.
 
 ### Full line-movement history (Historical Backfill / Enterprise)
 

@@ -431,13 +431,24 @@ class PropLine:
         bookmakers: str | list[str] | None = None,
     ) -> dict:
         """
-        Get the closing line per (book, market, outcome) for an event.
+        Get the opening and closing line per (book, market, outcome).
 
-        Returns the last snapshot at or before commence_time per outcome —
-        the canonical "closing line" for CLV-tracking. Replaces the
-        "fetch full history → grep for the latest pre-game row" pattern
-        with one call. Each outcome carries a ``closing_at`` field with the
-        snapshot's ``recorded_at`` so you can confirm freshness.
+        Closing is the last snapshot at or before commence_time
+        (``price`` / ``point`` / ``closing_at``); opening is the first
+        snapshot in the same 14-day pre-kickoff window (``opening_price``
+        / ``opening_point`` / ``opening_at``). Together they replace the
+        "fetch full history → grep for the first and last pre-game rows"
+        pattern with one call.
+
+        Compare the *points* as well as the prices: on spreads and totals
+        the number moves as much as the price (6.5 → 7.0), so a price-only
+        comparison mis-measures those markets.
+
+        ``opening_age_seconds`` is how long before kickoff the opener was
+        recorded. The archive starts April 2026, so for a book/sport
+        PropLine began polling after a line was posted, ``opening_*`` means
+        *first observed by us* rather than the book's true open — a value
+        in minutes rather than hours is the tell.
 
         Hobby+ tiers get full data; free tier sees market structure with
         ``redacted=True`` and an ``upgrade_url``.
@@ -450,7 +461,8 @@ class PropLine:
 
         Returns:
             Event dict with one row per outcome carrying its closing
-            ``price``, ``point``, and ``closing_at`` timestamp.
+            ``price`` / ``point`` / ``closing_at`` and its
+            ``opening_price`` / ``opening_point`` / ``opening_at``.
 
         Example:
             >>> closing = client.get_odds_closing(
@@ -461,7 +473,8 @@ class PropLine:
             ...     for m in book["markets"]:
             ...         for o in m["outcomes"]:
             ...             print(book["key"], o["description"], o["name"],
-            ...                   o["price"], "at", o["closing_at"])
+            ...                   o["opening_price"], "@", o["opening_point"],
+            ...                   "->", o["price"], "@", o["point"])
         """
         params: dict[str, str] = {}
         if markets:

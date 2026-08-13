@@ -263,12 +263,15 @@ class PropLine:
             requests.
 
             Underdog Fantasy outcomes carry an extra ``payout_multiplier``
-            key — a DFS boost/discount factor. It is ``None`` on a standard
-            pick (the quoted ``price`` carries the full payout) and a float
-            such as ``1.5`` (boost) or ``0.75`` (discount) on a "special".
-            Skip outcomes with a non-null multiplier when comparing DFS
-            lines to sportsbook consensus so a scaled payout doesn't read
-            as a mispriced edge.
+            key — a DFS boost/discount factor. Every Underdog outcome
+            carries a value (``None`` means the book is not Underdog). A
+            standard pick is ``1.0`` (the quoted ``price`` carries the full
+            payout); any other float, such as ``1.5`` (boost) or ``0.75``
+            (discount), marks a "special". Keep only
+            ``payout_multiplier == 1.0`` when comparing DFS lines to
+            sportsbook consensus so a scaled payout doesn't read as a
+            mispriced edge — filtering on non-null instead would drop every
+            Underdog line.
 
             PrizePicks outcomes carry ``dfs_odds_type`` instead — the
             projection flavor: ``"standard"`` (the true market line),
@@ -969,15 +972,21 @@ class PropLine:
         sport: str,
         event_id: int | str,
         markets: str | list[str] | None = None,
+        bookmakers: str | list[str] | None = None,
     ) -> dict:
         """
         Cross-book +EV analysis for a single event.
 
         Groups every outcome by (market, player, line) across the books we
-        carry, derives a no-vig fair line from a sharp anchor (Pinnacle
-        preferred, Bovada fallback), and computes EV% for every other book's
-        price at the same line. Outcomes are sorted with +EV plays floated
-        to the top of each line group.
+        carry, derives a no-vig fair line from a sharp anchor, and computes
+        EV% for every other book's price at the same line. Outcomes are
+        sorted with +EV plays floated to the top of each line group.
+
+        The anchor is chosen PER LINE, in the order pinnacle -> polymarket
+        -> kalshi -> bovada, and the line's ``fair_source`` always names the
+        one used (``fair_source_default`` carries the order). One response
+        routinely mixes several anchors, so read ``fair_source`` per line
+        rather than assuming Pinnacle anchored all of them.
 
         PrizePicks is excluded — its synthetic +100/+100 prices aren't
         payout odds. Lines without sharp-anchor coverage on this event are
@@ -991,6 +1000,12 @@ class PropLine:
             markets: Optional comma-separated string or list of market keys
                 to evaluate (e.g. ["pitcher_strikeouts", "batter_hits"]).
                 Omit to evaluate every market on the event.
+            bookmakers: Optional bookmaker key(s) to restrict the returned
+                prices to (e.g. ["draftkings", "fanduel"]) — shop only the
+                books you hold accounts at. This narrows the PRICES, never
+                the fair-line anchor: ``bookmakers="draftkings"`` still
+                returns DraftKings EV% measured against Pinnacle. Lines
+                where none of your books quote a price are omitted.
 
         Returns:
             Dict with keys: id, sport_key, home_team, away_team,
@@ -1011,6 +1026,10 @@ class PropLine:
         if markets:
             params["markets"] = (
                 ",".join(markets) if isinstance(markets, list) else markets
+            )
+        if bookmakers:
+            params["bookmakers"] = (
+                bookmakers if isinstance(bookmakers, str) else ",".join(bookmakers)
             )
         return self._request(
             "GET",

@@ -78,7 +78,7 @@ across books in a single request — iterate the array to line-shop.
 | `pinnacle` | Pinnacle | MLB (game lines + props), NBA/NHL/soccer (game lines, goalie saves) |
 | `unibet` | Unibet | MLB/NBA/NHL + 6 soccer leagues — game lines; NBA + NHL + soccer player props (points, rebounds, assists, threes, steals, blocks, PRA, shots on goal, goalscorer, cards, BTTS, total corners) |
 | `prizepicks` | PrizePicks (DFS) | MLB, NBA, WNBA, NHL, tennis, UFC, soccer — player props only; synthetic +100/+100 even-money pricing since DFS payouts scale with parlay correct-count, not per-pick odds. Each outcome carries `dfs_odds_type` (`standard` = the market line, `goblin` = easier/lower-payout, `demon` = harder/higher-payout). Filter to `standard` for the market line; goblin/demon arrive as their own per-line markets (e.g. `Points (demon 27.5)`). Each goblin/demon outcome also carries `line_gap` — the signed delta from that player+stat's standard line (`+demon` harder / `-goblin` easier; null when no standard counterpart) |
-| `underdog` | Underdog Fantasy (DFS) | MLB, NBA, NHL, tennis, UFC, 9 soccer leagues — player props with real two-way American prices and a `payout_multiplier` on boosted/discounted picks (`None` = standard 1.0 pick; e.g. `1.5` boost / `0.75` discount). Filter out non-null multipliers when comparing DFS lines to sportsbook consensus |
+| `underdog` | Underdog Fantasy (DFS) | MLB, NBA, NHL, tennis, UFC, 9 soccer leagues — player props with real two-way American prices and a `payout_multiplier` on every outcome (`1.0` = standard pick; e.g. `1.5` boost / `0.75` discount; `None` only means the book is not Underdog). Keep only `payout_multiplier == 1.0` when comparing DFS lines to sportsbook consensus — filtering on non-null would drop every Underdog line |
 
 ```python
 from propline import PropLine, Bookmaker
@@ -443,11 +443,17 @@ for m in trends["markets"]:
 ### Cross-book +EV (Pro)
 
 ```python
-# Find +EV plays on a single event. Pinnacle anchors the no-vig fair
-# line; every other book's price gets an EV%, with +EV plays floated
-# to the top of each line group.
+# Find +EV plays on a single event. A sharp book anchors the no-vig
+# fair line; every other book's price gets an EV%, with +EV plays
+# floated to the top of each line group.
+#
+# `bookmakers` narrows the PRICES to books you hold accounts at — never
+# the anchor. This still measures DK and FD against Pinnacle. Read
+# line["fair_source"] to see which book anchored each line; the anchor
+# is picked per line, so one response mixes several.
 ev = client.get_event_ev("baseball_mlb", 12345,
-    markets=["pitcher_strikeouts", "batter_hits"])
+    markets=["pitcher_strikeouts", "batter_hits"],
+    bookmakers=["draftkings", "fanduel"])  # optional
 
 for line in ev["lines"]:
     plus = [o for o in line["outcomes"] if o["is_plus_ev"]]

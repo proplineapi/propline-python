@@ -39,7 +39,7 @@ for bookmaker in odds["bookmakers"]:
 
 1. Go to [prop-line.com](https://prop-line.com/?ref=pypi)
 2. Enter your email
-3. Get your API key instantly — **500 requests/day, no credit card required**
+3. Get your API key instantly — **1,000 requests/day, no credit card required**
 
 ## Available Sports
 
@@ -699,7 +699,7 @@ except PropLineError as e:
 ```
 
 Gated and throttled endpoints return a structured error body
-([docs](https://prop-line.com/docs#errors)); its fields are exposed as
+([docs](https://prop-line.com/docs?ref=pypi#errors)); its fields are exposed as
 attributes on every `PropLineError`:
 
 | Attribute | Meaning |
@@ -730,11 +730,17 @@ off before hitting the daily cap.
 
 ## Links
 
-
 - **Website**: [prop-line.com](https://prop-line.com/?ref=pypi)
-- **API Docs**: [prop-line.com/docs](https://prop-line.com/docs)
+- **API Docs**: [prop-line.com/docs](https://prop-line.com/docs?ref=pypi)
+- **Recipes** (code for common jobs): [prop-line.com/recipes](https://prop-line.com/recipes?ref=pypi)
+- **Odds API by sport and market** (live line, books, graded hit rate): [prop-line.com/odds-api](https://prop-line.com/odds-api?ref=pypi)
+- **Prop resolution** (every prop graded against the box score): [prop-line.com/prop-resolution-api](https://prop-line.com/prop-resolution-api?ref=pypi)
+- **Cross-book +EV**: [prop-line.com/ev](https://prop-line.com/ev?ref=pypi)
+- **Pricing**: [prop-line.com/pricing](https://prop-line.com/pricing?ref=pypi)
 - **Dashboard**: [prop-line.com/dashboard](https://prop-line.com/dashboard)
-- **API Reference**: [api.prop-line.com/docs](https://api.prop-line.com/docs)
+- **OpenAPI reference**: [api.prop-line.com/docs](https://api.prop-line.com/docs)
+- **Node SDK**: [`npm install propline`](https://www.npmjs.com/package/propline)
+- **MCP server**: [`npx -y propline-mcp`](https://www.npmjs.com/package/propline-mcp)
 
 ## License
 

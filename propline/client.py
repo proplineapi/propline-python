@@ -1375,6 +1375,7 @@ class PropLine:
         filter_player_name: str | None = None,
         min_price_change_pct: float | None = None,
         min_steam_score: float | None = None,
+        min_books_agreeing: int | None = None,
     ) -> dict:
         """
         Register a webhook subscription. Streaming tier only.
@@ -1386,7 +1387,8 @@ class PropLine:
         Args:
             url: HTTPS URL that will receive POSTed events.
             events: Event types to subscribe to. Default: all.
-                Valid values: "line_movement", "resolution", "steam".
+                Valid values: "line_movement", "resolution", "steam",
+                "market_suspended".
             filter_sport_key: Only deliver events for this sport
                 (e.g. "baseball_mlb").
             filter_event_id: Only deliver events for this specific event.
@@ -1400,6 +1402,12 @@ class PropLine:
             min_steam_score: Minimum 0-100 steam score to trigger a
                 ``steam`` event (cross-book sharp-money move). Filters weak
                 moves; null uses the detector's global floor.
+            min_books_agreeing: ``market_suspended`` only — how many books
+                must have pulled the same player/market on the same event
+                before you are told. Unset/1 = every drop (right if you
+                price off one book and need to know the instant its
+                number vanishes); 3+ = corroborated late scratches only.
+                Every payload carries ``books_agreeing`` regardless.
 
         Returns:
             Webhook dict with full ``secret`` field (only time it's revealed).
@@ -1427,6 +1435,8 @@ class PropLine:
             body["min_price_change_pct"] = min_price_change_pct
         if min_steam_score is not None:
             body["min_steam_score"] = min_steam_score
+        if min_books_agreeing is not None:
+            body["min_books_agreeing"] = min_books_agreeing
         return self._request("POST", "/webhooks", json=body)
 
     def list_webhooks(self) -> list[dict]:
@@ -1448,6 +1458,7 @@ class PropLine:
         filter_player_name: str | None = None,
         min_price_change_pct: float | None = None,
         min_steam_score: float | None = None,
+        min_books_agreeing: int | None = None,
         active: bool | None = None,
     ) -> dict:
         """Update fields on a webhook. Only supplied fields are changed."""
@@ -1468,6 +1479,8 @@ class PropLine:
             body["min_price_change_pct"] = min_price_change_pct
         if min_steam_score is not None:
             body["min_steam_score"] = min_steam_score
+        if min_books_agreeing is not None:
+            body["min_books_agreeing"] = min_books_agreeing
         if active is not None:
             body["active"] = active
         return self._request("PATCH", f"/webhooks/{webhook_id}", json=body)

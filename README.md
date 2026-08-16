@@ -543,8 +543,9 @@ client.export_odds_history(
 
 ## Webhooks (Streaming tier)
 
-The Streaming tier ($79/mo) pushes `line_movement` and `resolution` events
-to your URL in real time, with HMAC-SHA256 signing and automatic retries.
+The Streaming tiers push `line_movement`, `resolution`, `steam` and
+`market_suspended` events to your URL in real time, with HMAC-SHA256 signing
+and automatic retries.
 
 ### Register a subscription
 
@@ -567,7 +568,7 @@ Each POST carries these headers:
 
 | Header | Purpose |
 |--------|---------|
-| `X-PropLine-Event` | `line_movement`, `resolution`, or `test` |
+| `X-PropLine-Event` | `line_movement`, `resolution`, `steam`, `market_suspended`, or `test` |
 | `X-PropLine-Timestamp` | Unix seconds |
 | `X-PropLine-Signature` | HMAC-SHA256 over `f"{timestamp}." + body` |
 | `X-PropLine-Delivery` | Stable delivery id (use for idempotency) |
@@ -619,6 +620,51 @@ if not ok:
   "resolved_at": "2026-04-18T06:14:22Z"
 }
 ```
+
+### Market-suspended payload
+
+A book took a market off the board pregame. One delivery per (book, event,
+player) — a late scratch is ONE event carrying every key the book pulled, not
+one per key. `books_agreeing` is how many books have pulled the same subject
+on the same event; subscribe with `min_books_agreeing=3` to hear only
+corroborated drops, or leave it unset to hear every one (the right choice if
+you price off a single book). Pull-side twin: `suspended_at` on every market
+in `/odds`, on every tier.
+
+```python
+client.create_webhook(
+    url="https://example.com/hooks/propline",
+    events=["market_suspended"],
+    filter_sport_key="baseball_mlb",
+    min_books_agreeing=3,   # omit to receive every single-book drop
+)
+```
+
+```json
+{
+  "event_type": "market_suspended",
+  "sport_key": "baseball_mlb",
+  "event": {"id": 138811, "home_team": "Pittsburgh Pirates", "away_team": "Boston Red Sox", ...},
+  "bookmaker_key": "draftkings",
+  "bookmaker_title": "DraftKings",
+  "subject": "Willson Contreras",
+  "reason": "off_the_board",
+  "markets": [
+    {"key": "batter_hits", "description": "Willson Contreras Hits O/U", "period": null,
+     "last_seen": "2026-08-16T14:03:45+00:00",
+     "last_price": [{"name": "Over", "price": -115, "point": 0.5},
+                    {"name": "Under", "price": -105, "point": 0.5}]},
+    {"key": "batter_total_bases", "...": "..."}
+  ],
+  "books_agreeing": 7,
+  "books": ["betmgm", "betrivers", "draftkings", "novig", "pinnacle", "prophetx", "underdog"],
+  "suspended_at": "2026-08-16T14:07:30+00:00"
+}
+```
+
+`reason` is `"off_the_board"` for a sportsbook and `"no_offers"` for an
+exchange whose resting offers went. There is no restore event: when the
+market returns, `line_movement` fires on the returning price.
 
 ### Manage subscriptions
 

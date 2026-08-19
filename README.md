@@ -674,7 +674,8 @@ for wh in client.list_webhooks():
 
 client.update_webhook(wh_id, min_price_change_pct=5.0)  # change a filter
 client.test_webhook(wh_id)                              # queue a test payload
-client.list_webhook_deliveries(wh_id, limit=50)         # last 50 attempts
+client.list_webhook_deliveries(wh_id, limit=50)         # newest 50 attempts
+client.list_webhook_deliveries(wh_id, limit=200, before_id=123456)  # page backwards
 client.delete_webhook(wh_id)                            # cascades deliveries
 ```
 

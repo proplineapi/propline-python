@@ -1493,17 +1493,29 @@ class PropLine:
         """Queue a sample ``test`` payload to the webhook's URL."""
         return self._request("POST", f"/webhooks/{webhook_id}/test")
 
-    def list_webhook_deliveries(self, webhook_id: int, limit: int = 50) -> list[dict]:
+    def list_webhook_deliveries(
+        self,
+        webhook_id: int,
+        limit: int = 50,
+        before_id: int | None = None,
+    ) -> list[dict]:
         """
-        Return recent delivery attempts for a webhook.
+        Return recent delivery attempts for a webhook, newest first.
 
         Each delivery has ``status`` (pending/success/failed), ``response_code``,
         ``attempts``, ``delivered_at``, and the ``payload`` that was sent.
+
+        ``before_id`` pages backwards: pass the smallest ``id`` from the
+        previous page to get the next-older page. A page shorter than
+        ``limit`` (max 200) is the last one.
         """
+        params: dict = {"limit": limit}
+        if before_id is not None:
+            params["before_id"] = before_id
         return self._request(
             "GET",
             f"/webhooks/{webhook_id}/deliveries",
-            params={"limit": limit},
+            params=params,
         )
 
     @staticmethod

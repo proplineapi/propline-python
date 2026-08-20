@@ -555,12 +555,22 @@ wh = client.create_webhook(
     filter_sport_key="baseball_mlb",
     filter_market_key="pitcher_strikeouts",
     min_price_change_pct=2.0,  # only fire on shifts of 2%+ (or any point change)
+    batch_max=100,             # recommended: up to 100 events per POST
 )
 
 # Store wh["secret"] — this is the ONLY time it's returned.
 SECRET = wh["secret"]
 print(f"webhook id: {wh['id']}")
 ```
+
+With `batch_max` set (1–500), events arrive as a signed envelope instead of
+one POST each: `{"batch": true, "event_type": ..., "count": N, "events":
+[{"delivery_id": ..., "data": <per-event payload>}, ...]}` with an
+`X-PropLine-Batch: N` header. Dedupe on each element's `delivery_id`. Use it
+for any high-volume subscription — sport-wide `line_movement` can exceed
+1,000 events/min during a full slate, and one POST per event caps your
+delivery rate at your endpoint's response time. `batch_max=0` reverts to
+per-event delivery. JSON format only (Discord stays per-event).
 
 ### Verify incoming deliveries
 

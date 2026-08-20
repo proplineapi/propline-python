@@ -1376,6 +1376,7 @@ class PropLine:
         min_price_change_pct: float | None = None,
         min_steam_score: float | None = None,
         min_books_agreeing: int | None = None,
+        batch_max: int | None = None,
     ) -> dict:
         """
         Register a webhook subscription. Streaming tier only.
@@ -1408,6 +1409,15 @@ class PropLine:
                 price off one book and need to know the instant its
                 number vanishes); 3+ = corroborated late scratches only.
                 Every payload carries ``books_agreeing`` regardless.
+            batch_max: Batched delivery opt-in (1-500). Up to N events
+                arrive per POST as a signed envelope ``{"batch": true,
+                "event_type": ..., "count": N, "events": [{"delivery_id":
+                ..., "data": <per-event payload>}, ...]}`` with an
+                ``X-PropLine-Batch`` header. Strongly recommended for
+                high-volume subscriptions (sport-wide line_movement can
+                exceed 1,000 events/min) — one POST per event caps your
+                delivery rate at your endpoint's response time. ``0``
+                reverts to per-event. JSON format only.
 
         Returns:
             Webhook dict with full ``secret`` field (only time it's revealed).
@@ -1437,6 +1447,8 @@ class PropLine:
             body["min_steam_score"] = min_steam_score
         if min_books_agreeing is not None:
             body["min_books_agreeing"] = min_books_agreeing
+        if batch_max is not None:
+            body["batch_max"] = batch_max
         return self._request("POST", "/webhooks", json=body)
 
     def list_webhooks(self) -> list[dict]:
@@ -1459,6 +1471,7 @@ class PropLine:
         min_price_change_pct: float | None = None,
         min_steam_score: float | None = None,
         min_books_agreeing: int | None = None,
+        batch_max: int | None = None,
         active: bool | None = None,
     ) -> dict:
         """Update fields on a webhook. Only supplied fields are changed."""
@@ -1481,6 +1494,8 @@ class PropLine:
             body["min_steam_score"] = min_steam_score
         if min_books_agreeing is not None:
             body["min_books_agreeing"] = min_books_agreeing
+        if batch_max is not None:
+            body["batch_max"] = batch_max
         if active is not None:
             body["active"] = active
         return self._request("PATCH", f"/webhooks/{webhook_id}", json=body)

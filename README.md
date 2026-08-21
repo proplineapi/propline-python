@@ -176,7 +176,10 @@ bookmaker block (odds) or price row (best-line) then carries a `link`:
 that book's public event-page URL, so your UI can click out from a line
 straight to the book. Plain navigation, no affiliate tagging. Links ship
 for Bovada, DraftKings, FanDuel, BetMGM, Kalshi, Polymarket and
-Smarkets; other books return `None`.
+Smarkets; other books return `None`. The same flag also adds `app_link`
+— a mobile app-open deep link that opens the book's native app on the
+fixture (app-store fallback otherwise), vs `link` = the desktop web page.
+ProphetX only today; `None` elsewhere.
 
 ```python
 bl = client.get_event_best_line(

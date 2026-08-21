@@ -216,6 +216,10 @@ class PropLine:
                 DraftKings, FanDuel, BetMGM, Kalshi, Polymarket and
                 Smarkets; other books return ``None``. Maps to the
                 the-odds-api-compatible ``includeLinks=true`` query param.
+                The same flag also adds ``app_link`` — a mobile app-open
+                deep link (opens the book's native app on the fixture,
+                app-store fallback otherwise); ProphetX only today, ``None``
+                elsewhere.
             include_book_ids: When True, each bookmaker block carries a
                 ``book_event_id`` and each outcome a ``book_outcome_id`` —
                 that book's OWN identifiers for the event and the priced
@@ -1079,7 +1083,9 @@ class PropLine:
                 — that book's public event-page URL, the click-out for
                 "go bet this". Books without a verified URL template
                 return ``None``. Links appear on free-tier redacted
-                responses too (navigation isn't the paid data).
+                responses too (navigation isn't the paid data). Also adds
+                ``app_link`` — a mobile app-open deep link (ProphetX only
+                today, ``None`` elsewhere).
 
         Returns:
             Dict with keys: id, sport_key, home_team, away_team,

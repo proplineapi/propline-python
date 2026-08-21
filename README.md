@@ -627,8 +627,11 @@ if not ok:
   "sport_key": "baseball_mlb",
   "event": {"id": 5070, "home_team": "Seattle Mariners", "away_team": "Texas Rangers", ...},
   "market_key": "totals",
+  "market_description": "Total 7.5",
   "player_name": null,
   "outcome_name": "Over",
+  "dfs_odds_type": null,
+  "payout_multiplier": null,
   "previous": {"price_american": -750, "point": 7.0},
   "current":  {"price_american": -300, "point": 7.5},
   "price_change_pct": 60.0,
@@ -644,14 +647,24 @@ if not ok:
   "sport_key": "baseball_mlb",
   "event": {"id": 16, "home_score": 4, "away_score": 2, "status": "final", ...},
   "market_key": "pitcher_strikeouts",
+  "market_description": "Total Pitching Strikeouts",
   "player_name": "Tarik Skubal (DET)",
   "outcome_name": "Over",
+  "dfs_odds_type": null,
+  "payout_multiplier": null,
   "point": 6.5,
   "resolution": "won",
   "actual_value": 9.0,
   "resolved_at": "2026-04-18T06:14:22Z"
 }
 ```
+
+`market_description` is where a DFS alt market's flavor + line live (e.g.
+PrizePicks `"Rebounds (demon 12.5)"`). `dfs_odds_type` is the PrizePicks
+flavor (`standard` / `goblin` / `demon`; null for every traditional book);
+`payout_multiplier` is Underdog's numeric boost/discount (PrizePicks
+publishes no numeric multiplier — the flavor is the signal). Same semantics
+as the identically-named fields on `/odds` outcomes.
 
 ### Market-suspended payload
 

@@ -1576,6 +1576,79 @@ class PropLine:
 
     # ------------------------------------------------------------------
 
+    def grade_clv(self, bets: list[dict]) -> dict:
+        """
+        Grade placed bets against their closing lines (CLV).
+
+        Closing line value is the only durable proxy for whether a
+        bettor has edge: did the price you took beat the number the
+        market settled on? Send the bets you actually placed and each
+        comes back with its closing price, the de-vigged closing fair
+        probability, CLV, and — once the game settles — the graded
+        result and actual stat value.
+
+        Stateless: nothing is stored server-side.
+
+        Hobby+ required. Free tier receives the full structure and
+        match verdicts with every number nulled.
+
+        Args:
+            bets: Up to 500 bet dicts. Required keys per bet:
+                sport_key, event_id, market, bookmaker, selection,
+                price. Optional: ref (echoed back so you can align
+                rows without relying on order), side ("Over"/"Under";
+                omit for YES-only props), point, period, stake
+                (defaults to 1 unit for profit_units).
+
+        Returns:
+            Dict with `summary` and `bets`. Each graded bet carries
+            closing_price, closing_point, closing_at, closing_is_stale,
+            closing_is_final, fair_source, closing_fair_prob, clv_pct,
+            ev_vs_close_pct, beat_close, resolution, actual_value.
+
+        Note:
+            TWO CLV numbers are returned deliberately. `clv_pct` is
+            price-vs-price — familiar and quotable, but vig-blind, so
+            it flatters a bet taken on the juicy side of a wide market.
+            `ev_vs_close_pct` scores your price against the DE-VIGGED
+            close and is the honest one. They can disagree by several
+            points on the same bet.
+
+            The de-vig uses the sharpest book quoting that line at
+            close (reported as `fair_source`), not the book you bet
+            at — de-vigging your own book always returns a negative
+            number, because you paid its hold.
+
+            Bets whose event has not started carry
+            `closing_is_final: False`, are counted in
+            `summary["pending"]`, and are excluded from the summary
+            averages: before kickoff the "closing" price is just the
+            latest price, so its CLV is ~0 by construction.
+
+            Matching is fail-closed. A bet that cannot be pinned to
+            exactly one stored outcome returns `matched: False` with an
+            `unmatched_reason` rather than a confident wrong match.
+
+        Example:
+            >>> res = client.grade_clv([{
+            ...     "ref": "b1",
+            ...     "sport_key": "baseball_mlb",
+            ...     "event_id": 150791,
+            ...     "market": "batter_hits_runs_rbis",
+            ...     "bookmaker": "lowvig",
+            ...     "selection": "Drake Baldwin",
+            ...     "side": "Under",
+            ...     "point": 0.5,
+            ...     "price": 145,
+            ...     "stake": 1,
+            ... }])
+            >>> print(res["summary"]["avg_ev_vs_close_pct"])
+            0.08
+        """
+        return self._request("POST", "/clv/grade", json=bets)
+
+    # ------------------------------------------------------------------
+
     def close(self):
         """Close the HTTP client."""
         self._client.close()

@@ -242,6 +242,28 @@ NBA / NHL / MLB / soccer. Football period markets land at NFL preseason
 (August 2026). The same `period=` kwarg works on `get_odds_history()` and
 `get_odds_closing()` too.
 
+### Exchange liquidity (is the price actually bettable?)
+
+ProphetX is a peer-to-peer exchange, so its best price is often a thin
+dangling offer with only a few dollars behind it. Every ProphetX outcome
+carries `liquidity` — the dollars you can actually stake at the quoted
+price — so you can filter or flag quotes that are only good for a buck.
+`None` for books without a resting-size signal. The same field rides
+every price row on `get_best_line`, where a thin exchange quote often
+wins the best slot on price alone.
+
+```python
+event = client.get_odds("baseball_mlb", event_id=12345)
+for book in event["bookmakers"]:
+    if book["key"] != "prophetx":
+        continue
+    for m in book["markets"]:
+        for o in m["outcomes"]:
+            liq = o.get("liquidity")
+            if liq is not None and liq < 25:
+                print(f"thin: {m['key']} {o['name']} {o['price']} (${liq})")
+```
+
 ### Get game scores
 
 ```python

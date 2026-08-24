@@ -245,7 +245,9 @@ class PropLine:
                 specific keys; see below).
 
                 Common markets:
-                - Game lines: "h2h", "spreads", "totals" (includes alt lines + team totals)
+                - Game lines: "h2h", "spreads", "totals" (includes alt lines + team
+                  totals — read each market's "team" field to tell a team
+                  total from the game total; it is None on the game total)
                 - MLB props: "pitcher_strikeouts", "pitcher_outs", "batter_hits",
                   "batter_home_runs", "batter_rbis", "batter_total_bases",
                   "batter_2plus_hits", "batter_2plus_home_runs", "batter_2plus_rbis",

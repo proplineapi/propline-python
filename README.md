@@ -127,6 +127,23 @@ for bk in odds["bookmakers"]:
 ### Game Lines (all sports)
 `h2h`, `spreads`, `totals` (includes alt lines and team totals)
 
+A **team total** rides the same `totals` key as the game total, so one book can
+return several `totals` markets on one event. Read the market's `team` field to
+tell them apart — it carries the canonical event team name (matching
+`home_team` / `away_team` exactly) on a team total and is `None` on the game
+total:
+
+```python
+game_total = next(m for m in book["markets"]
+                  if m["key"] == "totals" and m.get("team") is None)
+```
+
+`team` is always `None` outside `totals`, and is present on odds, odds history,
+closing lines and movement. The book's own `description` is still there as the
+human-readable label, but every book words it differently (Bovada suffixes
+`" - {team}"`, BetUS prefixes `"Team Total - "`, Smarkets and TAB say nothing),
+so prefer `team` over parsing that string.
+
 ## Examples
 
 ### Get MLB pitcher strikeout props

@@ -878,6 +878,75 @@ class PropLine:
             params=params,
         )
 
+    def get_player_games(
+        self,
+        sport: str,
+        player_name: str,
+        limit: int = 20,
+        opponent: str | None = None,
+        stat_type: str | list[str] | None = None,
+    ) -> dict:
+        """
+        Get a player's game log — recent games with every raw box-score stat.
+
+        One call replaces one request per event, so you can build L5/L10/L20,
+        season splits, charts and head-to-head from the raw rows. Free tier.
+
+        This reads the RAW-STATS archive, not graded-prop history. It covers
+        every game with a box score on file, including games no sportsbook
+        posted a market on — so a "last 10 games" window here is genuinely the
+        last 10 games, whereas one built from :meth:`get_player_history` or
+        :meth:`get_player_trends` silently skips unpriced games. It carries no
+        line, price or grade; use :meth:`get_player_trends` for hit rates
+        against a posted line.
+
+        Args:
+            sport: Sport key (e.g. "baseball_mlb").
+            player_name: Player's name. Case-insensitive prefix match, and
+                accent-insensitive ("Jose Ramirez" finds "José Ramírez").
+            limit: Games to return, 1-100 (default 20).
+            opponent: Optional head-to-head filter. Accepts a full name,
+                nickname or abbreviation ("Boston Red Sox", "Red Sox", "BOS").
+                The limit applies AFTER this filter, so opponent="BOS" with
+                limit=10 gives the last 10 meetings rather than the Boston
+                games among the last 10 games. Not capped to the current
+                season — it reaches as far back as the archive holds.
+            stat_type: Optional stat name or list of names to narrow the
+                response; omit for all. The vocabulary is per-sport (see
+                https://prop-line.com/docs#stats).
+
+        Returns:
+            Dict with keys: player_name, sport_key, opponent, games.
+            Each game: event_id, commence_time, status, home_team, away_team,
+            home_score, away_score, team_abbr, player_team, opponent, is_home,
+            and ``stats`` — a flat map of stat name to value.
+
+            ``player_team`` / ``opponent`` / ``is_home`` are None when the
+            player's side can't be identified from the box score's team
+            abbreviation, and always for individual sports (tennis, golf, UFC)
+            which have no home side. They are left None rather than guessed —
+            a wrong home/away flag would corrupt every split built on it.
+
+        Example:
+            >>> log = client.get_player_games("baseball_mlb", "Aaron Judge", limit=10)
+            >>> hits = [g["stats"].get("hits", 0) for g in log["games"]]
+            >>> print(f"L10 hits: {sum(hits)}")
+            >>> h2h = client.get_player_games(
+            ...     "baseball_mlb", "Aaron Judge", limit=5, opponent="BOS")
+        """
+        params: dict[str, Any] = {"limit": limit}
+        if opponent:
+            params["opponent"] = opponent
+        if stat_type:
+            params["stat_type"] = (
+                stat_type if isinstance(stat_type, str) else ",".join(stat_type)
+            )
+        return self._request(
+            "GET",
+            f"/sports/{sport}/players/{player_name}/games",
+            params=params,
+        )
+
     def get_player_trends(
         self,
         sport: str,

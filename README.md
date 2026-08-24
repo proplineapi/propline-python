@@ -503,6 +503,30 @@ for e in hist["entries"]:
 # Output: "2026-04-19 DraftKings: line 6.5, actual 6.0 -> Over lost, Under won"
 ```
 
+### Get a player's game log / head-to-head (free)
+
+```python
+# Every raw box-score stat, per game, in one call — no fanning out one
+# request per event. Build L5/L10/L20, season splits and charts from these.
+log = client.get_player_games("baseball_mlb", "Aaron Judge", limit=10)
+
+for g in log["games"]:
+    where = "vs" if g["is_home"] else "@"
+    print(f"{g['commence_time'][:10]} {where} {g['opponent']}: "
+          f"{g['stats'].get('hits', 0)} H, {g['stats'].get('home_runs', 0)} HR")
+
+# Head-to-head — accepts a name, nickname or abbreviation. The limit applies
+# AFTER the filter, so this is the last 5 MEETINGS, not the Boston games
+# among his last 5 games. Not capped to the current season.
+h2h = client.get_player_games("baseball_mlb", "Aaron Judge",
+    limit=5, opponent="BOS")
+```
+
+This reads the raw-stats archive, not graded-prop history — it covers every
+game with a box score on file, including games no sportsbook priced, so a
+"last 10 games" window here really is the last 10 games. It carries no line,
+price or grade; use `get_player_trends` for hit rates against a posted line.
+
 ### Get player hit-rate trends (Pro full, Free redacted)
 
 ```python

@@ -302,6 +302,24 @@ class PropLine:
             a slower book's ``last_change_at`` is older) without a separate
             ``get_odds_history`` call per event.
 
+            Every player-prop outcome carries ``player_id`` — a stable,
+            cross-referenceable league player id for joining the SAME player
+            across books WITHOUT name matching: ``"{source}:{league_id}"``
+            (``"mlb:592450"`` MLBAM, ``"nba:"``/``"wnba:"`` CDN personId,
+            ``"nhl:"`` api-web playerId, ``"espn:8439"`` ESPN athlete id for
+            soccer/NFL/NCAAF). A real league id rather than a name-hash, so it
+            distinguishes two players with the same name, is stable across
+            seasons, and cross-references to the league's own API. Present on
+            player-prop markets only (``None`` on game lines and futures),
+            unconditional, and also on ``get_event_results``. ``None`` whenever
+            we lack a confirmed, unambiguous id — never guessed, because a wrong
+            join is worse than a missed one: a sport with no stable-id stats
+            feed (tennis/golf/UFC/… — null forever), a player who has never
+            graded, a book spelling that diverges from the league's
+            ("Elmer Rodríguez" gets the id, "Elmer Rodriguez Cruz" stays
+            ``None``), or a name two players share. Coverage warms as games
+            grade after launch.
+
         Example:
             >>> odds = client.get_odds("basketball_nba", event_id=21,
             ...     markets=["player_points", "player_rebounds"])

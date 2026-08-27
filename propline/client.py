@@ -1450,6 +1450,7 @@ class PropLine:
         filter_event_id: int | None = None,
         filter_market_key: str | None = None,
         filter_player_name: str | None = None,
+        filter_bookmaker_key: str | None = None,
         min_price_change_pct: float | None = None,
         min_steam_score: float | None = None,
         min_books_agreeing: int | None = None,
@@ -1474,6 +1475,15 @@ class PropLine:
                 (e.g. "pitcher_strikeouts").
             filter_player_name: Case-insensitive substring match on the
                 outcome's player_name.
+            filter_bookmaker_key: Comma-separated book keys, the same
+                vocabulary as the ``?bookmakers=`` query param (e.g.
+                ``"draftkings,fanduel,pinnacle"``). Unset = all books;
+                unknown keys match nothing. Applies to ``line_movement``,
+                ``resolution`` and ``market_suspended``; ``steam`` is a
+                cross-book consensus signal with no single book and is
+                unaffected. A three-book filter on a sport-wide
+                line_movement subscription typically cuts delivery volume
+                ~85%.
             min_price_change_pct: Minimum % change in American odds to
                 trigger a line_movement event. Point-only shifts always
                 pass regardless. 0 = fire on any change.
@@ -1518,6 +1528,8 @@ class PropLine:
             body["filter_market_key"] = filter_market_key
         if filter_player_name is not None:
             body["filter_player_name"] = filter_player_name
+        if filter_bookmaker_key is not None:
+            body["filter_bookmaker_key"] = filter_bookmaker_key
         if min_price_change_pct is not None:
             body["min_price_change_pct"] = min_price_change_pct
         if min_steam_score is not None:
@@ -1545,6 +1557,7 @@ class PropLine:
         filter_event_id: int | None = None,
         filter_market_key: str | None = None,
         filter_player_name: str | None = None,
+        filter_bookmaker_key: str | None = None,
         min_price_change_pct: float | None = None,
         min_steam_score: float | None = None,
         min_books_agreeing: int | None = None,
@@ -1565,6 +1578,8 @@ class PropLine:
             body["filter_market_key"] = filter_market_key
         if filter_player_name is not None:
             body["filter_player_name"] = filter_player_name
+        if filter_bookmaker_key is not None:
+            body["filter_bookmaker_key"] = filter_bookmaker_key
         if min_price_change_pct is not None:
             body["min_price_change_pct"] = min_price_change_pct
         if min_steam_score is not None:

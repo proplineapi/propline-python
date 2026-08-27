@@ -1144,6 +1144,62 @@ class PropLine:
             params=params,
         )
 
+    def get_event_projections(
+        self,
+        sport: str,
+        event_id: int | str,
+        markets: str | list[str] | None = None,
+    ) -> dict:
+        """
+        Market-implied consensus projections for a single event.
+
+        One row per (market, player): the statistical value the betting
+        market collectively implies — the line where the no-vig P(over)
+        crosses 50%, taken as the median across contributing sportsbooks.
+        Built for validating your own statistical/fantasy projections
+        against the live market.
+
+        These are MARKET-IMPLIED values computed purely from sportsbook
+        prices — never a PropLine forecast, and no accuracy claim is made.
+        DFS pick'em pricing is excluded; only genuine two-way Over/Under
+        pairs contribute. ``player_id`` on each row is the same stable
+        cross-book id served on /odds prop outcomes (None until the player
+        has graded at least once).
+
+        Paid tier required (Hobby and above); free tier receives the
+        structure with ``projected_value`` / ``consensus_over_prob`` nulled
+        and ``redacted: true``.
+
+        Args:
+            sport: Sport key (e.g. "football_nfl").
+            event_id: Event ID (int or string).
+            markets: Optional comma-separated string or list of market keys
+                (e.g. ["player_pass_yds", "player_receptions"]).
+
+        Returns:
+            Dict with keys: id, sport_key, home_team, away_team,
+            commence_time, method, projections, redacted, upgrade_url.
+            Each projection: market_key, player, player_id,
+            projected_value, consensus_over_prob, books_contributing,
+            last_update.
+
+        Example:
+            >>> proj = client.get_event_projections("football_nfl", 25070)
+            >>> for row in proj["projections"]:
+            ...     print(row["player"], row["market_key"],
+            ...           row["projected_value"])
+        """
+        params: dict[str, Any] = {}
+        if markets:
+            params["markets"] = (
+                ",".join(markets) if isinstance(markets, list) else markets
+            )
+        return self._request(
+            "GET",
+            f"/sports/{sport}/events/{event_id}/projections",
+            params=params,
+        )
+
     def get_event_best_line(
         self,
         sport: str,

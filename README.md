@@ -590,6 +590,22 @@ for line in ev["lines"]:
                   f"{o['price']:+5d}  ev=+{o['ev_pct']}%")
 ```
 
+### Market-implied projections (Hobby+)
+
+```python
+# The statistical value the market implies per (market, player) — the
+# line where the no-vig P(over) crosses 50%, median across books.
+# Market-implied arithmetic, not a forecast. Use it to validate your
+# own projections against the live market.
+proj = client.get_event_projections("football_nfl", 25070,
+    markets=["player_pass_yds", "player_receptions"])  # optional
+
+for row in proj["projections"]:
+    print(f"{row['player']:24s} {row['market_key']:22s} "
+          f"proj={row['projected_value']}  "
+          f"books={row['books_contributing']}")
+```
+
 ### Best line — cross-book line shopping (Hobby+)
 
 ```python

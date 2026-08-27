@@ -1013,7 +1013,11 @@ class PropLine:
             params=params,
         )
 
-    def get_futures(self, sport: str) -> list[dict]:
+    def get_futures(
+        self,
+        sport: str,
+        bookmakers: str | list[str] | None = None,
+    ) -> list[dict]:
         """
         List futures markets for a sport — championship winner, MVP,
         division winner, season win totals, etc. Each row is one (futures
@@ -1023,6 +1027,11 @@ class PropLine:
 
         Args:
             sport: Sport key (e.g. "baseball_mlb", "basketball_nba").
+            bookmakers: Optional bookmaker key(s) to restrict the per-book
+                market rows to those books (the-odds-api-compatible; omitted
+                = all books, unknown keys match nothing). A futures event
+                left with no matching market is dropped. Accepts a
+                comma-separated string or a list of keys.
 
         Returns:
             List of futures events. Each event: id, sport_key, title,
@@ -1040,7 +1049,12 @@ class PropLine:
             ...         for o in top3:
             ...             print(f"  {o['name']:<25} {o['price']:+}")
         """
-        return self._request("GET", f"/sports/{sport}/futures")
+        params = {}
+        if bookmakers:
+            params["bookmakers"] = (
+                bookmakers if isinstance(bookmakers, str) else ",".join(bookmakers)
+            )
+        return self._request("GET", f"/sports/{sport}/futures", params=params)
 
     def get_event_ev(
         self,

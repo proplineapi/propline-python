@@ -787,6 +787,25 @@ as the identically-named fields on `/odds` outcomes.
 
 ### Market-suspended payload
 
+### Stale prices on a live game (`pregame_only`)
+
+Each bookmaker block in `/odds` carries `pregame_only`. It is `True` when the
+event is **live** and that book does not price it in play — the prices shown
+are its last pregame quote and will not move again until the game ends.
+
+This is the one staleness case `suspended_at` cannot show you: that flag is set
+when a book *pulls* a market, and a book with no in-play feed is never polled
+for the fixture once it starts, so nothing goes missing and nothing is flagged.
+
+```python
+odds = client.get_event_odds("football_ncaaf", event_id)
+live_books = [b for b in odds["bookmakers"] if not b.get("pregame_only")]
+```
+
+The rows are still returned rather than withheld, because on the DFS books that
+frozen pregame line is the number the bet settles against — so treat
+`pregame_only: true` as "a real price, but not a live one".
+
 A book took a market off the board pregame. One delivery per (book, event,
 player) — a late scratch is ONE event carrying every key the book pulled, not
 one per key. `books_agreeing` is how many books have pulled the same subject

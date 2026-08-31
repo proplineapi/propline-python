@@ -104,6 +104,11 @@ class AuthError(PropLineError):
     pass
 
 
+# Streaming origin — a SEPARATE Fly app on its own machines, deliberately
+# not derived from base_url. See PropLine.stream().
+DEFAULT_WS_URL = "wss://ws.prop-line.com"
+
+
 class PropLine:
     """
     Client for the PropLine player props API.
@@ -1800,7 +1805,13 @@ class PropLine:
         import asyncio
         import json as _json
 
-        base = (ws_url or self.base_url)
+        # ⚠️ Streaming has its OWN origin and does NOT derive from base_url.
+        # Deriving it (the first cut did) sends the socket to
+        # api.prop-line.com, which serves /v1/stream from the same app — so it
+        # WORKS, and silently parks a persistent connection on the REST tier's
+        # event loop, the exact thing the separate websocket tier prevents.
+        # Pass ws_url only for self-hosted or local development.
+        base = (ws_url or DEFAULT_WS_URL)
         base = base.replace("https://", "wss://").replace("http://", "ws://")
         base = base.rstrip("/")
         if base.endswith("/v1"):

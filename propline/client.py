@@ -1758,6 +1758,100 @@ class PropLine:
             params={"since_seq": since_seq, "limit": limit},
         )
 
+    async def stream(
+        self,
+        webhook_id: int,
+        since_seq: int = 0,
+        *,
+        reconnect: bool = True,
+        ws_url: str | None = None,
+        on_truncated=None,
+    ):
+        """
+        Stream a websocket subscription as an async generator.
+
+            async for ev in client.stream(12, since_seq=4180):
+                print(ev["seq"], ev["event_type"], ev["data"])
+
+        The subscription must have been created with ``transport="websocket"``.
+        Same events, same filters, same ``seq`` as an HTTP webhook — one
+        subscription, a different transport.
+
+        **Reconnects and resumes from the last ``seq`` it saw**, which is the
+        point of the sequence: a dropped connection is not a gap in your data.
+        Pass ``reconnect=False`` for a single connection that ends on close.
+
+        ``on_truncated(ready)`` fires when the server reports that events after
+        your cursor aged out of retention. That is the one case streaming
+        cannot make you whole — resync from the REST endpoints.
+
+        Requires the optional extra::
+
+            pip install propline[stream]
+        """
+        try:
+            import websockets
+        except ImportError as exc:  # pragma: no cover - depends on install
+            raise ImportError(
+                "Websocket streaming needs the optional extra: "
+                "pip install propline[stream]"
+            ) from exc
+
+        import asyncio
+        import json as _json
+
+        base = (ws_url or self.base_url)
+        base = base.replace("https://", "wss://").replace("http://", "ws://")
+        base = base.rstrip("/")
+        if base.endswith("/v1"):
+            base = base[: -len("/v1")]
+        url = f"{base}/v1/stream"
+
+        cursor = since_seq
+        attempt = 0
+        # Refusals that retrying cannot fix: a bad key, a tier without access,
+        # a subscription that is not yours, a malformed auth. Only transport
+        # failures and 4429 (at your connection limit) are worth retrying.
+        terminal_codes = {4400, 4401, 4403, 4404}
+
+        while True:
+            try:
+                async with websockets.connect(url) as ws:
+                    await ws.send(_json.dumps({
+                        "type": "auth",
+                        "api_key": self.api_key,
+                        "webhook_id": webhook_id,
+                        "since_seq": cursor,
+                    }))
+                    async for raw in ws:
+                        msg = _json.loads(raw)
+                        kind = msg.get("type")
+                        if kind == "ready":
+                            attempt = 0      # a good handshake resets backoff
+                            if msg.get("truncated") and on_truncated:
+                                on_truncated(msg)
+                        elif kind == "event":
+                            # Advance BEFORE yielding so a consumer that breaks
+                            # out still resumes from the right place.
+                            cursor = msg["seq"]
+                            yield msg
+                        # "ping" needs no reply — it only keeps idle proxies
+                        # from closing the connection.
+            except Exception as exc:
+                code = getattr(exc, "code", None)
+                if code in terminal_codes:
+                    raise
+                if not reconnect:
+                    raise
+            else:
+                if not reconnect:
+                    return
+            # Capped exponential backoff: uncapped, a long outage leaves
+            # clients reconnecting hours apart; uncapped the other way, they
+            # stampede.
+            await asyncio.sleep(min(30.0, 0.5 * (2 ** attempt)))
+            attempt += 1
+
     @staticmethod
     def verify_signature(secret: str, timestamp: str, body: bytes, signature: str) -> bool:
         """

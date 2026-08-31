@@ -1713,6 +1713,51 @@ class PropLine:
             params=params,
         )
 
+    def replay_webhook_events(
+        self,
+        webhook_id: int,
+        since_seq: int = 0,
+        limit: int = 100,
+    ) -> dict:
+        """
+        Re-read this subscription's events in order, from a cursor.
+
+        Answers "my endpoint was down — what did I miss?". Every delivery
+        carries an ``X-PropLine-Sequence`` header: a counter that is monotonic
+        *within your subscription*. Store the highest one you have processed
+        and pass it back here as ``since_seq``.
+
+        Do NOT use ``X-PropLine-Delivery`` as the cursor. That id is global
+        across every subscription, so the gaps you see in it are other
+        customers' traffic and say nothing about your own stream.
+
+        Events come back OLDEST FIRST (the opposite of
+        :meth:`list_webhook_deliveries`, which is a newest-first debugging
+        log), so you can replay them forward. Page by passing ``next_seq``
+        back as ``since_seq`` while ``has_more`` is true; on an empty page
+        ``next_seq`` equals the ``since_seq`` you sent, so the loop needs no
+        special case.
+
+        **Check ``truncated``.** True means events after your cursor have
+        already aged out of retention (2 days, and at most 5,000 deliveries
+        per subscription) and are gone — resync from the REST endpoints rather
+        than assume you are current. Without that check a short list is
+        indistinguishable from "nothing to catch up on".
+
+        ``latest_seq`` is not subject to retention, so
+        ``latest_seq - next_seq`` is an honest "how far behind am I" even when
+        the rows themselves are gone. Sequence numbers always increase and
+        never repeat, but are not guaranteed to be dense — treat a skipped
+        number as normal and read ``truncated`` for actual loss.
+
+        Does not count against your daily request quota.
+        """
+        return self._request(
+            "GET",
+            f"/webhooks/{webhook_id}/replay",
+            params={"since_seq": since_seq, "limit": limit},
+        )
+
     @staticmethod
     def verify_signature(secret: str, timestamp: str, body: bytes, signature: str) -> bool:
         """

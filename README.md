@@ -723,6 +723,7 @@ Each POST carries these headers:
 | `X-PropLine-Timestamp` | Unix seconds |
 | `X-PropLine-Signature` | HMAC-SHA256 over `f"{timestamp}." + body` |
 | `X-PropLine-Delivery` | Stable delivery id (use for idempotency) |
+| `X-PropLine-Sequence` | Your subscription's own event counter (use for replay) |
 
 ```python
 from propline import PropLine
@@ -861,6 +862,43 @@ client.list_webhook_deliveries(wh_id, limit=50)         # newest 50 attempts
 client.list_webhook_deliveries(wh_id, limit=200, before_id=123456)  # page backwards
 client.delete_webhook(wh_id)                            # cascades deliveries
 ```
+
+### Catching up after an outage
+
+Every delivery carries `X-PropLine-Sequence` — a counter that is monotonic
+*within your subscription*. Store the highest one you have processed, then read
+forward from it. Do not use `X-PropLine-Delivery` as the cursor: that id is
+global across all subscriptions, so gaps in it are other customers' traffic.
+
+```python
+cursor = load_my_cursor()          # highest X-PropLine-Sequence you processed
+
+while True:
+    page = client.replay_webhook_events(wh_id, since_seq=cursor, limit=100)
+
+    if page["truncated"]:
+        # Events after your cursor aged out of retention and are gone.
+        # Resync from the REST endpoints rather than assume you are current.
+        resync_from_rest()
+
+    for ev in page["events"]:      # oldest first
+        handle(ev["event_type"], ev["data"])
+
+    cursor = page["next_seq"]
+    save_my_cursor(cursor)
+    if not page["has_more"]:
+        break
+
+print("behind by", page["latest_seq"] - cursor, "events")
+```
+
+Replay is bounded by delivery retention: 2 days, and at most 5,000 deliveries
+per subscription. `latest_seq` is not subject to retention, so
+`latest_seq - next_seq` stays honest even after the rows are pruned. Sequence
+numbers always increase and never repeat but are **not** guaranteed to be
+dense — treat a skipped number as normal and read `truncated` for real loss.
+Neither `replay_webhook_events` nor `list_webhook_deliveries` counts against
+your daily quota.
 
 ## Error Handling
 

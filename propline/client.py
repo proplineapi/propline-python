@@ -1988,8 +1988,9 @@ class PropLine:
         and `correlation_factor` (their ratio: the correlation the book
         is charging, below 1, or paying, above 1, for).
 
-        Book-native. FanDuel is the only book wired today; `bookmaker`
-        is additive and an unsupported value raises a 422.
+        Book-native. `bookmaker` is "fanduel" (its own betslip pricer) or
+        "betonlineag" / "lowvig" (the Sportcast engine both Chico brands
+        embed, same builder price); an unsupported value raises a 422.
 
         Hobby+ required. Free tier receives the matched legs with every
         price nulled (`redacted: True`) and never triggers a book call.
@@ -2002,7 +2003,7 @@ class PropLine:
                 (omit for h2h / YES-only props), period (omit for full
                 game). Or `book_outcome_id` from includeBookIds=True,
                 which overrides the other fields.
-            bookmaker: Book to price at. Only "fanduel" today.
+            bookmaker: "fanduel", "betonlineag" or "lowvig".
 
         Returns:
             Dict with `quoted`, `sgp_price` / `sgp_price_decimal`,

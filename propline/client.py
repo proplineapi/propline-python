@@ -1971,6 +1971,70 @@ class PropLine:
         """
         return self._request("POST", "/clv/grade", json=bets)
 
+    def price_sgp(
+        self,
+        sport_key: str,
+        event_id: int | str,
+        legs: list[dict],
+        bookmaker: str = "fanduel",
+    ) -> dict:
+        """
+        Price a same-game parlay at the book's own correlated odds.
+
+        Send two to ten legs from ONE event and get back the book's own
+        price for that exact slip — what a FanDuel customer would be
+        offered for it at that moment, not a model of it — beside
+        `independent_price` (the product of the live single-leg prices)
+        and `correlation_factor` (their ratio: the correlation the book
+        is charging, below 1, or paying, above 1, for).
+
+        Book-native. FanDuel is the only book wired today; `bookmaker`
+        is additive and an unsupported value raises a 422.
+
+        Hobby+ required. Free tier receives the matched legs with every
+        price nulled (`redacted: True`) and never triggers a book call.
+
+        Args:
+            sport_key: e.g. "baseball_mlb".
+            event_id: PropLine event id.
+            legs: 2-10 leg dicts named exactly as /odds names an outcome:
+                market, name, description ("" for game lines), point
+                (omit for h2h / YES-only props), period (omit for full
+                game). Or `book_outcome_id` from includeBookIds=True,
+                which overrides the other fields.
+            bookmaker: Book to price at. Only "fanduel" today.
+
+        Returns:
+            Dict with `quoted`, `sgp_price` / `sgp_price_decimal`,
+            `independent_price` / `independent_price_decimal`,
+            `correlation_factor`, `priced_at`, and `legs` — each with
+            `price` (our stored price), `book_price` (the live single
+            price the book quoted in the same call), `accepted` and the
+            book's own `failure_code` when it refused the leg.
+
+        Note:
+            Matching is fail-closed. A leg that does not pin to exactly
+            one stored outcome raises a 422 `leg_unmatched` naming the
+            leg — an Over with no point on an event carrying two total
+            lines is refused, not guessed. `quoted: False` means the
+            book will not offer that combination as a same-game parlay.
+            Quotes for an identical slip are shared for 15 seconds.
+
+        Example:
+            >>> res = client.price_sgp("baseball_mlb", 150791, [
+            ...     {"market": "h2h", "name": "St. Louis Cardinals"},
+            ...     {"market": "batter_1plus_hits", "name": "Freddie Freeman",
+            ...      "description": "Freddie Freeman"},
+            ... ])
+            >>> print(res["sgp_price"], res["independent_price"], res["correlation_factor"])
+            592 322 1.6387
+        """
+        return self._request(
+            "POST",
+            f"/sports/{sport_key}/events/{event_id}/sgp",
+            json={"bookmaker": bookmaker, "legs": legs},
+        )
+
     # ------------------------------------------------------------------
 
     def close(self):

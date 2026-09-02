@@ -506,6 +506,28 @@ stored outcome comes back `matched: False` with an `unmatched_reason`
 wrong match. Lines match by equality, never nearest-value — 0.5 and 1.5
 are different bets. Max 500 bets per request.
 
+### Price a same-game parlay at the book's own odds (Hobby+)
+
+`price_sgp` returns the book's **own correlated price** for a slip — what a
+FanDuel customer would be offered for it right now — beside the independent
+product of the single-leg prices and their ratio.
+
+```python
+q = client.price_sgp("baseball_mlb", 150791, [
+    {"market": "h2h", "name": "St. Louis Cardinals"},
+    {"market": "batter_1plus_hits", "name": "Freddie Freeman",
+     "description": "Freddie Freeman"},
+])
+print(q["quoted"], q["sgp_price"], q["independent_price"], q["correlation_factor"])
+# True 592 322 1.6387
+```
+
+Legs are named exactly as `/odds` names an outcome (or by `book_outcome_id`
+from `includeBookIds=True`). Matching is fail-closed: a leg that does not pin
+to exactly one stored outcome raises a 422 naming the leg. `quoted: False`
+means the book will not offer that combination as a same-game parlay; refused
+legs carry the book's own `failure_code`. FanDuel only today.
+
 ### Get player prop history (Pro full, Free redacted)
 
 ```python

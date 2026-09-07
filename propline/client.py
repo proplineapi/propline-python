@@ -2001,15 +2001,20 @@ class PropLine:
             legs: 2-10 leg dicts named exactly as /odds names an outcome:
                 market, name, description ("" for game lines), point
                 (omit for h2h / YES-only props), period (omit for full
-                game). Or `book_outcome_id` from includeBookIds=True,
-                which overrides the other fields.
+                game), and `team` for a TEAM total (the team as /odds
+                serves it in the market's `team` field; omit for the game
+                total — a totals leg with no team matches the game total
+                only). Or `book_outcome_id` from includeBookIds=True,
+                which overrides the other fields; on betonlineag / lowvig
+                that is Sportcast's settlement id (e.g. MatchWinner_Home).
             bookmaker: "fanduel", "betonlineag" or "lowvig".
 
         Returns:
             Dict with `quoted`, `sgp_price` / `sgp_price_decimal`,
             `independent_price` / `independent_price_decimal`,
             `correlation_factor`, `priced_at`, and `legs` — each with
-            `price` (our stored price), `book_price` (the live single
+            `team` (the team a team total is scoped to, None for the game
+            total), `price` (our stored price), `book_price` (the live single
             price the book quoted in the same call), `accepted` and the
             book's own `failure_code` when it refused the leg.
 

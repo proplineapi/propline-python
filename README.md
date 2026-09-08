@@ -1,6 +1,6 @@
 # PropLine Python SDK
 
-Official Python client for the [PropLine](https://prop-line.com/?ref=pypi) player props API — real-time betting odds from Bovada, DraftKings, FanDuel, Pinnacle, Unibet, and PrizePicks across MLB, NBA, NHL, soccer, UFC, and more.
+Official Python client for the [PropLine](https://prop-line.com/?ref=pypi) [player props API](https://prop-line.com/player-props-api?ref=pypi) — real-time betting odds from Bovada, DraftKings, FanDuel, Pinnacle, Unibet, and PrizePicks across MLB, NBA, NHL, soccer, UFC, and more.
 
 ## Installation
 
@@ -1019,6 +1019,7 @@ off before hitting the daily cap.
 ## Links
 
 - **Website**: [prop-line.com](https://prop-line.com/?ref=pypi)
+- **Player props API** (markets, books, sports covered): [prop-line.com/player-props-api](https://prop-line.com/player-props-api?ref=pypi)
 - **API Docs**: [prop-line.com/docs](https://prop-line.com/docs?ref=pypi)
 - **Recipes** (code for common jobs): [prop-line.com/recipes](https://prop-line.com/recipes?ref=pypi)
 - **Odds API by sport and market** (live line, books, graded hit rate): [prop-line.com/odds-api](https://prop-line.com/odds-api?ref=pypi)

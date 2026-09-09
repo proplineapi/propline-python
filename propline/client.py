@@ -1988,9 +1988,16 @@ class PropLine:
         and `correlation_factor` (their ratio: the correlation the book
         is charging, below 1, or paying, above 1, for).
 
-        Book-native. `bookmaker` is "fanduel" (its own betslip pricer) or
-        "betonlineag" / "lowvig" (the Sportcast engine both Chico brands
-        embed, same builder price); an unsupported value raises a 422.
+        Book-native. `bookmaker` is "fanduel" (its own betslip pricer),
+        "draftkings" (its SGP widget's pricer) or "betonlineag" / "lowvig"
+        (the Sportcast engine both Chico brands embed, same builder
+        price); an unsupported value raises a 422.
+        Pass "all" to quote every supported book on the same legs in one
+        call: the response is then ``{quotes: [<one single-book response
+        per book that answered>], errors: [{bookmaker, status, error,
+        detail}], best_bookmaker}`` — `best_bookmaker` is the quoted book
+        paying the most, i.e. the one charging the smallest correlation
+        reduction on these legs.
 
         Hobby+ required. Free tier receives the matched legs with every
         price nulled (`redacted: True`) and never triggers a book call.
@@ -2007,7 +2014,7 @@ class PropLine:
                 only). Or `book_outcome_id` from includeBookIds=True,
                 which overrides the other fields; on betonlineag / lowvig
                 that is Sportcast's settlement id (e.g. MatchWinner_Home).
-            bookmaker: "fanduel", "betonlineag" or "lowvig".
+            bookmaker: "fanduel", "draftkings", "betonlineag", "lowvig" — or "all".
 
         Returns:
             Dict with `quoted`, `sgp_price` / `sgp_price_decimal`,

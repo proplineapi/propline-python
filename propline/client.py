@@ -1911,7 +1911,7 @@ class PropLine:
 
     # ------------------------------------------------------------------
 
-    def grade_clv(self, bets: list[dict]) -> dict:
+    def grade_clv(self, bets: list[dict], devig: str | None = None) -> dict:
         """
         Grade placed bets against their closing lines (CLV).
 
@@ -1979,8 +1979,14 @@ class PropLine:
             ... }])
             >>> print(res["summary"]["avg_ev_vs_close_pct"])
             0.08
+
+        ``devig`` picks how the closing anchor's vig is removed before
+        ``closing_fair_prob`` / ``ev_vs_close_pct``: ``"multiplicative"``
+        (default) or ``"shin"``. Same vocabulary as ``get_event_ev``;
+        echoed as ``devig_method``.
         """
-        return self._request("POST", "/clv/grade", json=bets)
+        params = {"devig": devig} if devig else None
+        return self._request("POST", "/clv/grade", json=bets, params=params)
 
     def price_sgp(
         self,

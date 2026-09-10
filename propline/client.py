@@ -1085,6 +1085,7 @@ class PropLine:
         event_id: int | str,
         markets: str | list[str] | None = None,
         bookmakers: str | list[str] | None = None,
+        devig: str | None = None,
     ) -> dict:
         """
         Cross-book +EV analysis for a single event.
@@ -1118,6 +1119,14 @@ class PropLine:
                 the fair-line anchor: ``bookmakers="draftkings"`` still
                 returns DraftKings EV% measured against Pinnacle. Lines
                 where none of your books quote a price are omitted.
+            devig: How the anchor's vig is removed before the fair line is
+                derived. ``"multiplicative"`` (the default when omitted)
+                divides each implied probability by the booksum;
+                ``"shin"`` solves Shin's insider-trading model, which loads
+                the overround onto the longshot and corrects the
+                favourite-longshot bias — negligible on a -110/-110 total,
+                material on a +600 anytime scorer. The response echoes the
+                method as ``devig_method``.
 
         Returns:
             Dict with keys: id, sport_key, home_team, away_team,
@@ -1143,6 +1152,8 @@ class PropLine:
             params["bookmakers"] = (
                 bookmakers if isinstance(bookmakers, str) else ",".join(bookmakers)
             )
+        if devig:
+            params["devig"] = devig
         return self._request(
             "GET",
             f"/sports/{sport}/events/{event_id}/ev",

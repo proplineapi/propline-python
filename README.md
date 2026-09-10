@@ -605,7 +605,11 @@ for m in trends["markets"]:
 # is picked per line, so one response mixes several.
 ev = client.get_event_ev("baseball_mlb", 12345,
     markets=["pitcher_strikeouts", "batter_hits"],
-    bookmakers=["draftkings", "fanduel"])  # optional
+    bookmakers=["draftkings", "fanduel"],  # optional
+    devig="shin")  # optional: "multiplicative" (default) or "shin"
+# devig picks how the anchor's vig is removed. Shin's method loads the
+# overround onto the longshot, correcting the favourite-longshot bias
+# on props like anytime TD; the response echoes it as ev["devig_method"].
 
 for line in ev["lines"]:
     plus = [o for o in line["outcomes"] if o["is_plus_ev"]]

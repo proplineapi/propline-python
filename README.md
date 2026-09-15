@@ -121,13 +121,24 @@ for bk in odds["bookmakers"]:
 `player_goals`, `player_first_goal`, `player_goals_2plus`, `player_goals_3plus`, `player_shots_on_goal`, `player_points_1plus`, `player_points_2plus`, `player_points_3plus`, `goalie_saves`, `player_blocked_shots`
 
 ### Soccer (EPL, La Liga, Serie A, Bundesliga, Ligue 1, MLS)
-`anytime_goal_scorer`, `first_goal_scorer`, `2plus_goals`, `goal_or_assist`, `player_assists`, `player_2plus_assists`, `player_cards`, `both_teams_to_score`, `double_chance`, `draw_no_bet`, `correct_score`, `total_corners`, `total_cards`
+`anytime_goal_scorer`, `first_goal_scorer`, `2plus_goals`, `goal_or_assist`, `player_assists`, `player_2plus_assists`, `player_cards`, `both_teams_to_score`, `double_chance`, `draw_no_bet`, `correct_score`, `total_corners`, `team_corners`, `corners_spread`, `total_cards`
 
 ### UFC / Boxing
 `h2h`, `total_rounds`, `fight_distance`, `round_betting`
 
+### Football (NFL, NCAAF)
+`player_pass_yds`, `player_pass_tds`, `player_rush_yds`, `player_reception_yds`, `player_receptions`, `player_anytime_td`, `player_1st_td`, `player_2plus_td`, `winning_margin`, `half_time_full_time`, `overtime`
+
+### Golf
+`tournament_winner`, `player_make_cut`, `player_top_5`, `player_top_10`, `player_top_20`
+
+### Tennis
+`h2h`, `spreads` (games), `totals` (games), `total_sets`, `player_aces`, `player_games_won`
+
 ### Game Lines (all sports)
 `h2h`, `spreads`, `totals` (includes alt lines and team totals)
+
+Kalshi (`bookmakers=kalshi`) quotes many of these beyond game lines — NFL team totals (full game and 1st half), winning margin, half-time/full-time, La Liga + EPL `total_corners` / `team_corners`, La Liga goalscorers, WTA 125 / ATP Challenger match winners, `fight_distance`, and golf winner / make-cut / top 5, 10, 20 on the PGA and DP World Tours.
 
 A **team total** rides the same `totals` key as the game total, so one book can
 return several `totals` markets on one event. Read the market's `team` field to

@@ -594,7 +594,7 @@ class PropLine:
         date: str | None = None,
     ) -> dict:
         """
-        Get the synthetic MLB Grand Salami for a given UTC date — total
+        Get the synthetic MLB Grand Salami for a given US Eastern date — total
         runs scored across every MLB game on the slate, plus each book's
         implied Grand Salami line (median of per-game primary totals
         across our MLB books).
@@ -631,7 +631,7 @@ class PropLine:
         date: str | None = None,
     ) -> dict:
         """
-        Get the synthetic NHL Daily Goals Total for a given UTC date —
+        Get the synthetic NHL Daily Goals Total for a given US Eastern date —
         total goals scored across every NHL game on the slate (incl.
         OT/SO), plus each book's implied Daily Goals Total line (median
         of per-game primary totals across our NHL books).

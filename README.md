@@ -285,6 +285,10 @@ price — so you can filter or flag quotes that are only good for a buck.
 every price row on `get_best_line`, where a thin exchange quote often
 wins the best slot on price alone.
 
+Pass `include_depth=True` to add `depth` to every outcome: up to three
+order-book levels beyond the served price, each `{"price", "size"}`
+(`[]` for books we don't read depth for).
+
 ```python
 event = client.get_odds("baseball_mlb", event_id=12345)
 for book in event["bookmakers"]:
@@ -343,6 +347,11 @@ outcome): opening line, latest line, implied-probability + point shift,
 direction. The `steam` array flags outcomes multiple books moved the same
 direction — the sharp-money signal across every book we poll. Unique to
 PropLine. Hobby+ full; free tier redacted.
+
+`since="-6h"` (or an ISO timestamp) measures movement from that moment
+instead of each line's first quote. `include_book_ids=True` adds each
+book's `book_outcome_id`; `outcome_id` is always present. Steam rows carry
+`team` (team totals) plus `open_point` / `latest_point`.
 
 ### Get resolution coverage summary (free)
 
@@ -799,8 +808,8 @@ if not ok:
   "outcome_name": "Over",
   "dfs_odds_type": null,
   "payout_multiplier": null,
-  "previous": {"price_american": -750, "point": 7.0},
-  "current":  {"price_american": -300, "point": 7.5},
+  "previous": {"price_american": -750, "point": 7.0, "liquidity": null, "liquidity_updated_at": null},
+  "current":  {"price_american": -300, "point": 7.5, "liquidity": null, "liquidity_updated_at": null},
   "price_change_pct": 60.0,
   "timestamp": "2026-04-18T03:49:00Z"
 }
@@ -837,6 +846,11 @@ flavor (`standard` / `goblin` / `demon`; null for every traditional book);
 `payout_multiplier` is Underdog's numeric boost/discount (PrizePicks
 publishes no numeric multiplier — the flavor is the signal). Same semantics
 as the identically-named fields on `/odds` outcomes.
+
+A `line_movement` payload's `previous` / `current` also carry `liquidity`
+and `liquidity_updated_at` (exchange size at that price; null for
+sportsbooks). A `steam` payload carries `team` (team totals, else null)
+plus `open_point` / `latest_point`.
 
 ### Market-suspended payload
 

@@ -203,6 +203,7 @@ class PropLine:
         bookmakers: str | list[str] | None = None,
         include_links: bool = False,
         include_book_ids: bool = False,
+        include_depth: bool = False,
     ) -> dict | list[dict]:
         """
         Get current odds. If event_id is provided, returns odds for that event
@@ -242,6 +243,12 @@ class PropLine:
 
                 PropLine-specific (``includeBookIds=true``); the-odds-api
                 has no equivalent.
+            include_depth: When True, every outcome carries ``depth`` — up
+                to three order-book levels BEYOND the served price, each
+                ``{"price": <American>, "size": <dollars>}``. ``[]`` when
+                the book has nothing further or we do not read depth for
+                that book (sportsbooks). Omitted from the response unless
+                requested. PropLine-specific (``includeDepth=true``).
             markets: List of market keys to filter by. If omitted, the
                 bulk /odds endpoint defaults to ``h2h`` and the per-event
                 /odds endpoint defaults to ``h2h,spreads,totals`` —
@@ -298,6 +305,15 @@ class PropLine:
             when there's no standard counterpart). Flavor + ``line_gap`` are
             the modelable signals for fitting per-pick payout adjustments.
 
+            Every outcome also carries ``side`` — ``"home"``, ``"away"``,
+            ``"draw"`` or ``None`` — which side of the EVENT the leg is on,
+            so you never have to match a book's own team spelling. Each
+            event carries ``is_outright`` (True for a tournament/outright
+            listing with no away side) and, on tennis, ``tournament`` and
+            ``tour`` (which competition and tour the match belongs to;
+            ``None`` elsewhere). ``get_events`` and ``get_scores`` carry
+            ``tournament`` / ``tour`` too.
+
             Every outcome also carries ``last_change_at`` — PropLine's
             observed timestamp of the last time that outcome's price actually
             changed. Unlike ``book_updated_at`` (the book's own publish-time,
@@ -348,6 +364,8 @@ class PropLine:
             params["includeLinks"] = "true"
         if include_book_ids:
             params["includeBookIds"] = "true"
+        if include_depth:
+            params["includeDepth"] = "true"
 
         if event_id is not None:
             return self._request("GET", f"/sports/{sport}/events/{event_id}/odds", params=params)
@@ -771,6 +789,8 @@ class PropLine:
         markets: list[str] | None = None,
         period: str | None = None,
         bookmakers: str | list[str] | None = None,
+        since: str | None = None,
+        include_book_ids: bool = False,
     ) -> dict:
         """
         Get line movement + steam detection from the snapshot tick history.
@@ -788,10 +808,20 @@ class PropLine:
             event_id: Event ID
             markets: Optional list of market keys (default h2h, spreads, totals)
             period: Optional game-period filter ("q1", "h1", "p1", "f5", "all")
+            since: Measure movement from this moment instead of from each
+                line's first quote. ISO-8601 timestamp or a negative offset
+                from now (``"-6h"``, ``"-30m"``, ``"-2d"``). Each outcome's
+                opening is the price it held at ``since`` (or its first
+                quote after), so steam covers only moves in the window.
+            include_book_ids: When True, each outcome carries
+                ``book_outcome_id`` — the book's own selection id (see
+                ``get_odds``). ``outcome_id`` (PropLine's id, the same one
+                webhooks carry) is always present.
 
         Returns:
             A dict with ``bookmakers`` (per-book/market/outcome movement) and
-            ``steam`` (detected steam moves with ``steam_score``). When a book
+            ``steam`` (detected steam moves with ``steam_score``; each carries
+            ``team`` for a team total plus ``open_point`` / ``latest_point``). When a book
             moves the line itself, that outcome's ``prob_shift`` is null and
             ``direction`` is ``"line_moved"`` (excluded from the steam signal).
 
@@ -811,6 +841,10 @@ class PropLine:
             params["bookmakers"] = (
                 bookmakers if isinstance(bookmakers, str) else ",".join(bookmakers)
             )
+        if since:
+            params["since"] = since
+        if include_book_ids:
+            params["includeBookIds"] = "true"
 
         return self._request(
             "GET", f"/sports/{sport}/events/{event_id}/movement", params=params

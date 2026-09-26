@@ -855,6 +855,7 @@ class PropLine:
         sport: str,
         event_id: int | str,
         markets: list[str] | None = None,
+        bookmakers: list[str] | str | None = None,
     ) -> dict:
         """
         Get resolved prop outcomes with actual player stats.
@@ -867,6 +868,9 @@ class PropLine:
             sport: Sport key
             event_id: Event ID
             markets: Optional list of market keys to filter by
+            bookmakers: Optional book key(s) to restrict the response to
+                (omitted = all books). An unfiltered MLB game can run several
+                MB, so pass one book when that is all you need.
 
         Returns:
             Event dict with status, scores, and markets containing resolved
@@ -887,6 +891,10 @@ class PropLine:
         params = {}
         if markets:
             params["markets"] = ",".join(markets)
+        if bookmakers:
+            params["bookmakers"] = (
+                bookmakers if isinstance(bookmakers, str) else ",".join(bookmakers)
+            )
 
         return self._request(
             "GET", f"/sports/{sport}/events/{event_id}/results", params=params

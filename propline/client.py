@@ -461,14 +461,16 @@ class PropLine:
         markets: list[str] | None = None,
         period: str | list[str] | None = None,
         bookmakers: str | list[str] | None = None,
+        opening_window: int | str | None = None,
     ) -> dict:
         """
         Get the opening and closing line per (book, market, outcome).
 
         Closing is the last snapshot at or before commence_time
         (``price`` / ``point`` / ``closing_at``); opening is the first
-        snapshot in the same 14-day pre-kickoff window (``opening_price``
-        / ``opening_point`` / ``opening_at``). Together they replace the
+        snapshot PropLine holds for the outcome, however far before kickoff
+        the book posted it (``opening_price`` / ``opening_point`` /
+        ``opening_at``). Together they replace the
         "fetch full history → grep for the first and last pre-game rows"
         pattern with one call.
 
@@ -490,6 +492,9 @@ class PropLine:
             event_id: Event ID
             markets: List of market keys to filter by
                 (default: h2h,spreads,totals)
+            opening_window: Limit the opening lookback to this many days
+                before kickoff (1-3650), or ``"all"`` (the default).
+                ``14`` matches the resolved-props export's opening columns.
 
         Returns:
             Event dict with one row per outcome carrying its closing
@@ -517,6 +522,8 @@ class PropLine:
             params["bookmakers"] = (
                 bookmakers if isinstance(bookmakers, str) else ",".join(bookmakers)
             )
+        if opening_window is not None:
+            params["opening_window"] = str(opening_window)
 
         return self._request(
             "GET", f"/sports/{sport}/events/{event_id}/odds/closing", params=params

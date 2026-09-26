@@ -431,8 +431,10 @@ ts = client.get_odds_history(
 
 One call returns **both ends of the move** per `(book, market, outcome)`:
 the last snapshot at or before `commence_time` (`price` / `point` /
-`closing_at`) and the first snapshot in the same 14-day pre-kickoff window
-(`opening_price` / `opening_point` / `opening_at`).
+`closing_at`) and the first snapshot PropLine holds for the outcome, however
+far before kickoff the book posted it (`opening_price` / `opening_point` /
+`opening_at`). Pass `opening_window=14` to limit that lookback (14 matches the
+resolved-props export's opening columns).
 
 ```python
 closing = client.get_odds_closing(

@@ -555,6 +555,19 @@ to exactly one stored outcome raises a 422 naming the leg. `quoted: False`
 means the book will not offer that combination as a same-game parlay; refused
 legs carry the book's own `failure_code`. Books: `fanduel`, `betonlineag`, `lowvig`.
 
+### Search players / get a player_id (free)
+
+```python
+# Stable ids beat name spelling. Every spelling the books use is in known_names.
+res = client.search_players("baseball_mlb", "judge", limit=5)
+for p in res["players"]:
+    print(p["player_id"], p["name"], p["known_names"])
+# Output: "mlb:592450 Aaron Judge ['Aaron Judge']"
+```
+
+Pass a `player_id` anywhere a player name is accepted in
+`get_player_history` / `get_player_trends`; both responses carry `player_id`.
+
 ### Get player prop history (Pro full, Free redacted)
 
 ```python
@@ -567,6 +580,11 @@ for e in hist["entries"]:
           f"line {e['line']}, actual {e['actual_value']} "
           f"-> Over {e['over_result']}, Under {e['under_result']}")
 # Output: "2026-04-19 DraftKings: line 6.5, actual 6.0 -> Over lost, Under won"
+
+# Main lines only (drop alt-ladder rungs). Each entry also carries
+# is_main_line and line_moved_in_play.
+hist = client.get_player_history("baseball_mlb", "mlb:677951",
+    market="pitcher_strikeouts", main_line_only=True)
 ```
 
 ### Get a player's game log / head-to-head (free)

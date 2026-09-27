@@ -900,6 +900,44 @@ class PropLine:
             "GET", f"/sports/{sport}/events/{event_id}/results", params=params
         )
 
+    def search_players(
+        self,
+        sport: str,
+        search: str,
+        limit: int | None = None,
+    ) -> dict:
+        """
+        Search players by name fragment and get their stable ``player_id``.
+
+        Free tier. Use the returned ``player_id`` (e.g. ``"mlb:677951"``) in
+        place of a name in :meth:`get_player_history` and
+        :meth:`get_player_trends` to avoid name-spelling ambiguity.
+
+        Args:
+            sport: Sport key (e.g. "baseball_mlb").
+            search: Name fragment to match (e.g. "judge").
+            limit: Max players to return (1-100). Server default 25.
+
+        Returns:
+            Dict with keys: sport_key, search, players.
+            Each player: player_id, name, known_names (every spelling the
+            books use for this player).
+
+        Example:
+            >>> res = client.search_players("baseball_mlb", "judge")
+            >>> for p in res["players"]:
+            ...     print(p["player_id"], p["name"], p["known_names"])
+        """
+        params: dict[str, Any] = {"search": search}
+        if limit is not None:
+            params["limit"] = limit
+
+        return self._request(
+            "GET",
+            f"/sports/{sport}/players",
+            params=params,
+        )
+
     def get_player_history(
         self,
         sport: str,
@@ -907,6 +945,7 @@ class PropLine:
         market: str,
         bookmaker: str | None = None,
         limit: int = 20,
+        main_line_only: bool | None = None,
     ) -> dict:
         """
         Get a player's recent resolved prop history for a given market.
@@ -920,19 +959,26 @@ class PropLine:
 
         Args:
             sport: Sport key (e.g. "baseball_mlb").
-            player_name: Player's name. Case-insensitive prefix match —
-                "Bryan Woo" and "bryan woo" both work, and team suffixes
-                like "(SEA)" in the outcome description are tolerated.
+            player_name: Player's name, or a ``player_id`` like
+                ``"mlb:677951"`` (see :meth:`search_players`). Names are a
+                case-insensitive prefix match — "Bryan Woo" and "bryan woo"
+                both work, and team suffixes like "(SEA)" in the outcome
+                description are tolerated.
             market: Market key (e.g. "pitcher_strikeouts", "player_points").
             bookmaker: Optional single-book filter (e.g. "draftkings"). If
                 omitted, returns entries across every book that quoted lines.
             limit: Max entries to return (1-100). Default 20.
+            main_line_only: When True, return only each book's main line
+                (entries with ``is_main_line=True``), dropping alt-ladder
+                rungs. Omitted keeps every line.
 
         Returns:
-            Dict with keys: player_name, sport_key, market, entries, upgrade_url.
+            Dict with keys: player_name, player_id (str or None), sport_key,
+            market, entries, upgrade_url.
             Each entry: event_id, commence_time, home_team, away_team,
             bookmaker, bookmaker_title, line, over_price, under_price,
-            actual_value, over_result, under_result, resolved_at, redacted.
+            actual_value, over_result, under_result, resolved_at,
+            is_main_line, line_moved_in_play, redacted.
 
         Example:
             >>> hist = client.get_player_history("baseball_mlb", "Bryan Woo",
@@ -945,6 +991,8 @@ class PropLine:
         params: dict[str, Any] = {"market": market, "limit": limit}
         if bookmaker:
             params["bookmaker"] = bookmaker
+        if main_line_only is not None:
+            params["main_line_only"] = "true" if main_line_only else "false"
 
         return self._request(
             "GET",
@@ -1042,9 +1090,11 @@ class PropLine:
 
         Args:
             sport: Sport key (e.g. "baseball_mlb").
-            player_name: Player's name. Case-insensitive prefix match —
-                "Aaron Judge" and "aaron judge" both work, and team suffixes
-                like "(NYY)" in the outcome description are tolerated.
+            player_name: Player's name, or a ``player_id`` like
+                ``"mlb:592450"`` (see :meth:`search_players`). Names are a
+                case-insensitive prefix match — "Aaron Judge" and
+                "aaron judge" both work, and team suffixes like "(NYY)" in
+                the outcome description are tolerated.
             market: Optional market key (e.g. "batter_total_bases",
                 "player_points"). If omitted, returns trends for every market
                 the player has graded games in.
@@ -1056,8 +1106,8 @@ class PropLine:
                 2026-06-16, so per-flavor trends only have depth from then on.
 
         Returns:
-            Dict with keys: player_name, sport_key, dfs_odds_type (echo of the
-            filter, or None), markets, upgrade_url.
+            Dict with keys: player_name, player_id (str or None), sport_key,
+            dfs_odds_type (echo of the filter, or None), markets, upgrade_url.
             Each market entry: market, games_graded, reference_bookmaker,
             reference_bookmaker_title, recent_line, avg_actual, last_5,
             last_10, last_20, last_50, current_streak, last_game, redacted.

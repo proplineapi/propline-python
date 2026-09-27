@@ -604,6 +604,10 @@ for g in log["games"]:
 # among his last 5 games. Not capped to the current season.
 h2h = client.get_player_games("baseball_mlb", "Aaron Judge",
     limit=5, opponent="BOS")
+
+# A stable player_id (from search_players or any /odds prop outcome) works
+# in place of the name; the response carries it back as log["player_id"].
+log = client.get_player_games("baseball_mlb", "mlb:592450", limit=10)
 ```
 
 This reads the raw-stats archive, not graded-prop history — it covers every
@@ -650,6 +654,10 @@ ev = client.get_event_ev("baseball_mlb", 12345,
 # devig picks how the anchor's vig is removed. Shin's method loads the
 # overround onto the longshot, correcting the favourite-longshot bias
 # on props like anytime TD; the response echoes it as ev["devig_method"].
+# fair_source overrides the anchor: one book or a list tried in order per
+# line (pinnacle, polymarket, kalshi, bovada, smarkets).
+ev_pm = client.get_event_ev("baseball_mlb", 12345,
+    fair_source=["polymarket", "pinnacle"])
 
 for line in ev["lines"]:
     plus = [o for o in line["outcomes"] if o["is_plus_ev"]]

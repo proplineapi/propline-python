@@ -1024,8 +1024,10 @@ class PropLine:
 
         Args:
             sport: Sport key (e.g. "baseball_mlb").
-            player_name: Player's name. Case-insensitive prefix match, and
-                accent-insensitive ("Jose Ramirez" finds "José Ramírez").
+            player_name: Player's name — case-insensitive prefix match, and
+                accent-insensitive ("Jose Ramirez" finds "José Ramírez") — or
+                a stable ``player_id`` (e.g. ``"mlb:677951"``), which skips
+                name matching entirely.
             limit: Games to return, 1-100 (default 20).
             opponent: Optional head-to-head filter. Accepts a full name,
                 nickname or abbreviation ("Boston Red Sox", "Red Sox", "BOS").
@@ -1038,8 +1040,9 @@ class PropLine:
                 https://prop-line.com/docs#stats).
 
         Returns:
-            Dict with keys: player_name, sport_key, opponent, games.
-            Each game: event_id, commence_time, status, home_team, away_team,
+            Dict with keys: player_name, player_id, sport_key, opponent,
+            games. ``player_id`` is the stable cross-book id (None when the
+            player has none yet). Each game: event_id, commence_time, status, home_team, away_team,
             home_score, away_score, team_abbr, player_team, opponent, is_home,
             and ``stats`` — a flat map of stat name to value.
 
@@ -1185,6 +1188,7 @@ class PropLine:
         markets: str | list[str] | None = None,
         bookmakers: str | list[str] | None = None,
         devig: str | None = None,
+        fair_source: str | list[str] | None = None,
     ) -> dict:
         """
         Cross-book +EV analysis for a single event.
@@ -1226,6 +1230,11 @@ class PropLine:
                 favourite-longshot bias — negligible on a -110/-110 total,
                 material on a +600 anytime scorer. The response echoes the
                 method as ``devig_method``.
+            fair_source: Optional anchor override — one book or a list
+                (comma-joined) tried IN ORDER per line, from
+                ``pinnacle``, ``polymarket``, ``kalshi``, ``bovada``,
+                ``smarkets``. A line none of them anchors is dropped. Any
+                other value is a 400. Omit for the default order.
 
         Returns:
             Dict with keys: id, sport_key, home_team, away_team,
@@ -1253,6 +1262,10 @@ class PropLine:
             )
         if devig:
             params["devig"] = devig
+        if fair_source:
+            params["fair_source"] = (
+                fair_source if isinstance(fair_source, str) else ",".join(fair_source)
+            )
         return self._request(
             "GET",
             f"/sports/{sport}/events/{event_id}/ev",

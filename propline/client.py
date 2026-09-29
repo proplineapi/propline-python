@@ -1654,6 +1654,31 @@ class PropLine:
             "GET", "/markets/resolution-summary", params={"days": days}
         )
 
+    def get_event_ids(self, sport: str) -> list[dict]:
+        """
+        Event id crosswalk for one sport (free tier).
+
+        One object per event from 3 days ago to 30 days ahead, carrying the
+        ids needed to join PropLine events onto other feeds: ESPN
+        (``espn_event_id``), the MLB Stats API (``mlb_game_pk``), team keys
+        and ids, ids merged into this event (``merged_from_event_ids``), and
+        each sportsbook's own event id + link under ``books``.
+
+        Args:
+            sport: Sport key (e.g. "baseball_mlb").
+
+        Returns:
+            List of dicts with: id, commence_time, home_team, away_team,
+            home_team_key, away_team_key, home_team_id, away_team_id,
+            espn_event_id, mlb_game_pk, merged_from_event_ids, and books
+            ({bookmaker_key: {event_id, link}}).
+
+        Example:
+            >>> for e in client.get_event_ids("baseball_mlb"):
+            ...     print(e["id"], e["mlb_game_pk"], list(e["books"]))
+        """
+        return self._request("GET", f"/sports/{sport}/ids")
+
     def get_book_accuracy(
         self, days: int = 30, sport: str | None = None
     ) -> dict:

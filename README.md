@@ -363,6 +363,17 @@ for row in s["by_sport"][:5]:
     print(f"  {row['title']}: {row['graded']:,} ({row['events']} games)")
 ```
 
+### Event id crosswalk (free)
+
+Join PropLine events onto other feeds — ESPN, the MLB Stats API, and each
+sportsbook's own event ids.
+
+```python
+for e in client.get_event_ids("baseball_mlb"):
+    print(e["id"], e["espn_event_id"], e["mlb_game_pk"],
+          {k: v["event_id"] for k, v in e["books"].items()})
+```
+
 ### Sportsbook accuracy report (free)
 
 How well each book prices player props: closing prices are de-vigged and

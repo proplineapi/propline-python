@@ -1654,6 +1654,39 @@ class PropLine:
             "GET", "/markets/resolution-summary", params={"days": days}
         )
 
+    def get_book_accuracy(
+        self, days: int = 30, sport: str | None = None
+    ) -> dict:
+        """
+        Sportsbook accuracy report: how well each book prices player props.
+
+        Each book's closing player-prop prices are de-vigged and scored
+        (Brier) against the real result and against the other books on the
+        same line. ``skill_bp`` > 0 means the book was closer to the result
+        than the market average; ``margin_pct`` is the book's average
+        overround. A pricing report, never a profit claim. Free tier.
+
+        Args:
+            days: Look-back window, 7-120 (default: 30)
+            sport: Optional sport key (e.g. "baseball_mlb") to narrow it.
+
+        Returns:
+            Dict with: days, sport, method, total_props, books (list of
+            {key, title, props, brier, consensus_brier, skill_bp,
+            skill_ci95_bp, verdict, margin_pct}), by_sport and by_market
+            (dicts of the same row shape). ``verdict`` is one of
+            beats_market / trails_market / in_line.
+
+        Example:
+            >>> r = client.get_book_accuracy(days=30, sport="baseball_mlb")
+            >>> for b in r["books"]:
+            ...     print(b["title"], b["skill_bp"], b["verdict"])
+        """
+        params: dict = {"days": days}
+        if sport:
+            params["sport"] = sport
+        return self._request("GET", "/books/accuracy", params=params)
+
     # ------------------------------------------------------------------
     # Webhooks (Streaming tier)
     # ------------------------------------------------------------------

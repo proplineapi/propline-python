@@ -363,6 +363,21 @@ for row in s["by_sport"][:5]:
     print(f"  {row['title']}: {row['graded']:,} ({row['events']} games)")
 ```
 
+### Sportsbook accuracy report (free)
+
+How well each book prices player props: closing prices are de-vigged and
+scored against the real result and against the other books on the same line.
+`skill_bp > 0` means closer to the result than the market average;
+`margin_pct` is the book's average overround. A pricing report, not a
+betting edge.
+
+```python
+r = client.get_book_accuracy(days=30, sport="baseball_mlb")
+for b in r["books"]:
+    print(f"{b['title']:<14} {b['skill_bp']:+6.1f} bp  {b['verdict']:<14} "
+          f"margin {b['margin_pct']:.2f}%  ({b['props']:,} props)")
+```
+
 ### Get resolved prop outcomes (Pro only)
 
 ```python

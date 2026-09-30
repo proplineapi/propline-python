@@ -796,8 +796,8 @@ client.export_odds_history(
 
 ## Webhooks (Streaming tier)
 
-The Streaming tiers push `line_movement`, `resolution`, `steam` and
-`market_suspended` events to your URL in real time, with HMAC-SHA256 signing
+The Streaming tiers push `line_movement`, `resolution`, `steam`,
+`market_suspended` and `ev` events to your URL in real time, with HMAC-SHA256 signing
 and automatic retries.
 
 ### Register a subscription
@@ -831,7 +831,7 @@ Each POST carries these headers:
 
 | Header | Purpose |
 |--------|---------|
-| `X-PropLine-Event` | `line_movement`, `resolution`, `steam`, `market_suspended`, or `test` |
+| `X-PropLine-Event` | `line_movement`, `resolution`, `steam`, `market_suspended`, `ev`, or `test` |
 | `X-PropLine-Timestamp` | Unix seconds |
 | `X-PropLine-Signature` | HMAC-SHA256 over `f"{timestamp}." + body` |
 | `X-PropLine-Delivery` | Stable delivery id (use for idempotency) |
@@ -974,6 +974,29 @@ client.create_webhook(
 `reason` is `"off_the_board"` for a sportsbook and `"no_offers"` for an
 exchange whose resting offers went. There is no restore event: when the
 market returns, `line_movement` fires on the returning price.
+
+### `ev` events
+
+The push version of `get_event_ev`: fresh pregame prices only, once per
+subscription per price, when EV% against the fair line is between
+`min_ev_pct` (default 1) and `max_ev_pct` (default no cap). An analytical
+signal, not a claim of profit.
+
+```python
+client.create_webhook(
+    url="https://example.com/hooks/propline",
+    events=["ev"],
+    filter_sport_key="baseball_mlb",
+    min_ev_pct=2.0,
+    max_ev_pct=15.0,   # drop implausible edges; update with 0 to clear
+)
+```
+
+Payload fields: `event_type` ("ev"), `sport_key`, `event` (id, external_id,
+home_team, away_team, commence_time), `market_key`, `player_name`,
+`outcome_name`, `point`, `bookmaker_key`, `bookmaker_title`, `price`,
+`price_updated_at`, `fair_prob`, `fair_price`, `ev_pct`, `fair_source`,
+`fair_books`, `devig_method`, `timestamp`.
 
 ### Manage subscriptions
 

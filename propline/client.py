@@ -1742,6 +1742,8 @@ class PropLine:
         min_price_change_pct: float | None = None,
         min_steam_score: float | None = None,
         min_books_agreeing: int | None = None,
+        min_ev_pct: float | None = None,
+        max_ev_pct: float | None = None,
         batch_max: int | None = None,
     ) -> dict:
         """
@@ -1755,7 +1757,15 @@ class PropLine:
             url: HTTPS URL that will receive POSTed events.
             events: Event types to subscribe to. Default: all.
                 Valid values: "line_movement", "resolution", "steam",
-                "market_suspended".
+                "market_suspended", "ev". ``ev`` is the push version of
+                ``get_event_ev``: one delivery per subscription per fresh
+                pregame price whose EV% against the fair line falls in
+                ``[min_ev_pct, max_ev_pct]``. Payload: sport_key, event,
+                market_key, player_name, outcome_name, point,
+                bookmaker_key, bookmaker_title, price, price_updated_at,
+                fair_prob, fair_price, ev_pct, fair_source, fair_books,
+                devig_method, timestamp. It is an analytical signal, not
+                a claim of profit.
             filter_sport_key: Only deliver events for this sport
                 (e.g. "baseball_mlb").
             filter_event_id: Only deliver events for this specific event.
@@ -1784,6 +1794,11 @@ class PropLine:
                 price off one book and need to know the instant its
                 number vanishes); 3+ = corroborated late scratches only.
                 Every payload carries ``books_agreeing`` regardless.
+            min_ev_pct: ``ev`` only — minimum EV% (0-100) to deliver.
+                Unset uses 1.
+            max_ev_pct: ``ev`` only — maximum EV% to deliver (drops
+                implausibly large edges, usually stale prices). Unset = no
+                cap; on ``update_webhook`` pass 0 to clear it.
             batch_max: Batched delivery opt-in (1-500). Up to N events
                 arrive per POST as a signed envelope ``{"batch": true,
                 "event_type": ..., "count": N, "events": [{"delivery_id":
@@ -1824,6 +1839,10 @@ class PropLine:
             body["min_steam_score"] = min_steam_score
         if min_books_agreeing is not None:
             body["min_books_agreeing"] = min_books_agreeing
+        if min_ev_pct is not None:
+            body["min_ev_pct"] = min_ev_pct
+        if max_ev_pct is not None:
+            body["max_ev_pct"] = max_ev_pct
         if batch_max is not None:
             body["batch_max"] = batch_max
         return self._request("POST", "/webhooks", json=body)
@@ -1849,10 +1868,16 @@ class PropLine:
         min_price_change_pct: float | None = None,
         min_steam_score: float | None = None,
         min_books_agreeing: int | None = None,
+        min_ev_pct: float | None = None,
+        max_ev_pct: float | None = None,
         batch_max: int | None = None,
         active: bool | None = None,
     ) -> dict:
-        """Update fields on a webhook. Only supplied fields are changed."""
+        """Update fields on a webhook. Only supplied fields are changed.
+
+        ``min_ev_pct`` / ``max_ev_pct`` apply to ``ev`` events only;
+        ``max_ev_pct=0`` clears the cap.
+        """
         body: dict[str, Any] = {}
         if url is not None:
             body["url"] = url
@@ -1874,6 +1899,10 @@ class PropLine:
             body["min_steam_score"] = min_steam_score
         if min_books_agreeing is not None:
             body["min_books_agreeing"] = min_books_agreeing
+        if min_ev_pct is not None:
+            body["min_ev_pct"] = min_ev_pct
+        if max_ev_pct is not None:
+            body["max_ev_pct"] = max_ev_pct
         if batch_max is not None:
             body["batch_max"] = batch_max
         if active is not None:

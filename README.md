@@ -684,6 +684,13 @@ ev = client.get_event_ev("baseball_mlb", 12345,
 # line (pinnacle, polymarket, kalshi, bovada, smarkets).
 ev_pm = client.get_event_ev("baseball_mlb", 12345,
     fair_source=["polymarket", "pinnacle"])
+# fair_source="consensus" uses the median no-vig probability across every
+# book with a clean, fresh two-sided market (3+ books); line["fair_books"]
+# lists them. Opt-in, not a proven better anchor. max_age drops quoted
+# prices the book has not delivered in that many seconds (outcome
+# o["last_update"] says when it last did); the fair line is unaffected.
+ev_cons = client.get_event_ev("baseball_mlb", 12345,
+    fair_source="consensus", max_age=120)
 
 for line in ev["lines"]:
     plus = [o for o in line["outcomes"] if o["is_plus_ev"]]

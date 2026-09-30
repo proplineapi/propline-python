@@ -1189,6 +1189,7 @@ class PropLine:
         bookmakers: str | list[str] | None = None,
         devig: str | None = None,
         fair_source: str | list[str] | None = None,
+        max_age: int | None = None,
     ) -> dict:
         """
         Cross-book +EV analysis for a single event.
@@ -1235,13 +1236,24 @@ class PropLine:
                 ``pinnacle``, ``polymarket``, ``kalshi``, ``bovada``,
                 ``smarkets``. A line none of them anchors is dropped. Any
                 other value is a 400. Omit for the default order.
+                The single value ``"consensus"`` (cannot be combined with
+                book names) uses the median no-vig probability across every
+                book quoting a clean, fresh two-sided market (3+ books;
+                BetOnline/LowVig and BetRivers/Unibet count once); the books
+                used are listed in each line's ``fair_books``. Opt-in, not a
+                proven better anchor.
+            max_age: Optional, seconds (>= 0). Drops quoted prices the book
+                has not delivered within that many seconds. The fair line
+                is unaffected.
 
         Returns:
             Dict with keys: id, sport_key, home_team, away_team,
             commence_time, fair_source_default, lines.
             Each line: market_key, description, point, fair_source,
-            fair_probs, outcomes. Each outcome: book, book_title, name,
-            price, ev_pct, is_plus_ev.
+            fair_probs, fair_books (book keys used for a consensus fair
+            line, else None), outcomes. Each outcome: book, book_title,
+            name, price, ev_pct, is_plus_ev, last_update (ISO time the book
+            last delivered the market, or None).
 
         Example:
             >>> ev = client.get_event_ev("baseball_mlb", 12345)
@@ -1266,6 +1278,8 @@ class PropLine:
             params["fair_source"] = (
                 fair_source if isinstance(fair_source, str) else ",".join(fair_source)
             )
+        if max_age is not None:
+            params["max_age"] = max_age
         return self._request(
             "GET",
             f"/sports/{sport}/events/{event_id}/ev",

@@ -989,6 +989,7 @@ client.create_webhook(
     filter_sport_key="baseball_mlb",
     min_ev_pct=2.0,
     max_ev_pct=15.0,   # drop implausible edges; update with 0 to clear
+    ev_fair_source="consensus",  # or "pinnacle,kalshi"; update with "" to clear
 )
 ```
 

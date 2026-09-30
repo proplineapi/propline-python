@@ -1744,6 +1744,7 @@ class PropLine:
         min_books_agreeing: int | None = None,
         min_ev_pct: float | None = None,
         max_ev_pct: float | None = None,
+        ev_fair_source: str | None = None,
         batch_max: int | None = None,
     ) -> dict:
         """
@@ -1799,6 +1800,12 @@ class PropLine:
             max_ev_pct: ``ev`` only — maximum EV% to deliver (drops
                 implausibly large edges, usually stale prices). Unset = no
                 cap; on ``update_webhook`` pass 0 to clear it.
+            ev_fair_source: ``ev`` only — the fair-line anchor, same values
+                as ``get_event_ev(fair_source=...)``: ``"consensus"`` or a
+                comma list of anchor books (pinnacle, polymarket, kalshi,
+                bovada, smarkets). Unset = the /ev default order; on
+                ``update_webhook`` pass ``""`` to clear it. Invalid values
+                are a 400.
             batch_max: Batched delivery opt-in (1-500). Up to N events
                 arrive per POST as a signed envelope ``{"batch": true,
                 "event_type": ..., "count": N, "events": [{"delivery_id":
@@ -1843,6 +1850,8 @@ class PropLine:
             body["min_ev_pct"] = min_ev_pct
         if max_ev_pct is not None:
             body["max_ev_pct"] = max_ev_pct
+        if ev_fair_source is not None:
+            body["ev_fair_source"] = ev_fair_source
         if batch_max is not None:
             body["batch_max"] = batch_max
         return self._request("POST", "/webhooks", json=body)
@@ -1870,13 +1879,15 @@ class PropLine:
         min_books_agreeing: int | None = None,
         min_ev_pct: float | None = None,
         max_ev_pct: float | None = None,
+        ev_fair_source: str | None = None,
         batch_max: int | None = None,
         active: bool | None = None,
     ) -> dict:
         """Update fields on a webhook. Only supplied fields are changed.
 
         ``min_ev_pct`` / ``max_ev_pct`` apply to ``ev`` events only;
-        ``max_ev_pct=0`` clears the cap.
+        ``max_ev_pct=0`` clears the cap; ``ev_fair_source=""`` clears the
+        anchor override.
         """
         body: dict[str, Any] = {}
         if url is not None:
@@ -1903,6 +1914,8 @@ class PropLine:
             body["min_ev_pct"] = min_ev_pct
         if max_ev_pct is not None:
             body["max_ev_pct"] = max_ev_pct
+        if ev_fair_source is not None:
+            body["ev_fair_source"] = ev_fair_source
         if batch_max is not None:
             body["batch_max"] = batch_max
         if active is not None:

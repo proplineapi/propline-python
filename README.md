@@ -157,6 +157,20 @@ human-readable label, but every book words it differently (Bovada suffixes
 `" - {team}"`, BetUS prefixes `"Team Total - "`, Smarkets and TAB say nothing),
 so prefer `team` over parsing that string.
 
+### Main, alternate and milestone lines
+
+Every market row carries `line_type`: `"main"`, `"alternate"` or `"milestone"`.
+A milestone is an N+ rung ("3+ Strikeouts", "100+ Receiving Yards"). For one
+book, market, period and player (or team), exactly one row is `main`; every
+other line is `alternate`. Kalshi and Polymarket US put every player on one
+row, so on those books the field is also set on each outcome.
+
+```python
+main_lines = [m for m in book["markets"] if m.get("line_type") == "main"]
+```
+
+Present on odds, odds history, closing lines and best-line rows.
+
 ## Examples
 
 ### Get MLB pitcher strikeout props

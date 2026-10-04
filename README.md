@@ -81,6 +81,7 @@ across books in a single request — iterate the array to line-shop.
 | `unibet` | Unibet | MLB/NBA/NHL + 6 soccer leagues — game lines; NBA + NHL + soccer player props (points, rebounds, assists, threes, steals, blocks, PRA, shots on goal, goalscorer, cards, BTTS, total corners) |
 | `prizepicks` | PrizePicks (DFS) | MLB, NBA, WNBA, NHL, tennis, UFC, soccer — player props only; synthetic +100/+100 even-money pricing since DFS payouts scale with parlay correct-count, not per-pick odds. Each outcome carries `dfs_odds_type` (`standard` = the market line, `goblin` = easier/lower-payout, `demon` = harder/higher-payout). Filter to `standard` for the market line; goblin/demon arrive as their own per-line markets (e.g. `Points (demon 27.5)`). Each goblin/demon outcome also carries `line_gap` — the signed delta from that player+stat's standard line (`+demon` harder / `-goblin` easier; null when no standard counterpart) |
 | `underdog` | Underdog Fantasy (DFS) | MLB, NBA, NHL, tennis, UFC, 9 soccer leagues — player props with real two-way American prices and a `payout_multiplier` on every outcome (`1.0` = standard pick; e.g. `1.5` boost / `0.75` discount; `None` only means the book is not Underdog). Keep only `payout_multiplier == 1.0` when comparing DFS lines to sportsbook consensus — filtering on non-null would drop every Underdog line |
+| `pick6` | DraftKings Pick6 (DFS) | NFL, MLB, NHL, WNBA (NBA once DK posts a board) — player props only; synthetic +100/+100 even-money pricing. The main line carries `dfs_odds_type` `standard`; every alt rung arrives as its own market (e.g. `Passing Yards (alt 309.5)`) with `dfs_odds_type` `alternate` and the rung's Pick6 multiplier in `payout_multiplier` (0.5x–16x; `None` on a 1x pick). `book_outcome_id` is Pick6's selection id |
 
 ```python
 from propline import PropLine, Bookmaker
@@ -748,7 +749,7 @@ for line in bl["lines"]:
               f"(of {len(info['all_prices'])} books)")
 ```
 
-DFS pick'em books (PrizePicks, Sleeper, Dabble) are excluded — their
+DFS pick'em books (PrizePicks, Sleeper, Dabble, ParlayPlay, DraftKings Pick6) are excluded — their
 quotes aren't independently bettable payouts; Underdog is included only
 at clean two-way lines. Each price carries `last_update` so you can
 discount stale quotes.

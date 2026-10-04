@@ -1362,7 +1362,8 @@ class PropLine:
         whether that price beats a sharp no-vig fair line. Most line
         shoppers want both.
 
-        DFS pick'em books (PrizePicks, Sleeper, Dabble) are excluded —
+        DFS pick'em books (PrizePicks, Sleeper, Dabble, ParlayPlay,
+        DraftKings Pick6) are excluded —
         their quotes aren't independently bettable payouts; Underdog is
         included only at its clean two-way lines
         (payout_multiplier == 1.0).

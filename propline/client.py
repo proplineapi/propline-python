@@ -1761,7 +1761,13 @@ class PropLine:
             url: HTTPS URL that will receive POSTed events.
             events: Event types to subscribe to. Default: all.
                 Valid values: "line_movement", "resolution", "steam",
-                "market_suspended", "ev". ``ev`` is the push version of
+                "market_suspended", "ev", "line_added", "line_pulled".
+                ``line_added`` / ``line_pulled`` are opt-in (never in the
+                default): a book posted a new line on a game it already
+                prices or a pulled line returned (``reason`` "new" /
+                "returned", ``previous`` null), and we stopped serving a
+                line the book pulled (sent once, ``current`` null). Same
+                fields as line_movement. ``ev`` is the push version of
                 ``get_event_ev``: one delivery per subscription per fresh
                 pregame price whose EV% against the fair line falls in
                 ``[min_ev_pct, max_ev_pct]``. Payload: sport_key, event,

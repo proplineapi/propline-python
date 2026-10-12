@@ -846,7 +846,7 @@ Each POST carries these headers:
 
 | Header | Purpose |
 |--------|---------|
-| `X-PropLine-Event` | `line_movement`, `resolution`, `steam`, `market_suspended`, `ev`, or `test` |
+| `X-PropLine-Event` | `line_movement`, `resolution`, `steam`, `market_suspended`, `ev`, `line_added`, `line_pulled`, or `test` |
 | `X-PropLine-Timestamp` | Unix seconds |
 | `X-PropLine-Signature` | HMAC-SHA256 over `f"{timestamp}." + body` |
 | `X-PropLine-Delivery` | Stable delivery id (use for idempotency) |

@@ -1729,6 +1729,68 @@ class PropLine:
             params["sport"] = sport
         return self._request("GET", "/books/accuracy", params=params)
 
+    def get_golf_rounds(
+        self,
+        player: str,
+        tour: str | None = None,
+        limit: int = 20,
+        since: str | None = None,
+    ) -> dict:
+        """
+        A golfer's completed rounds, newest first, plus L5/L10/L20 averages.
+
+        Every completed round for every player in the field, back to 2024.
+        A round in progress is never included. Free tier.
+
+        Args:
+            player: Player name (case and accents ignored) or ESPN athlete id.
+            tour: Optional comma-separated tours: pga, dp_world, liv, lpga,
+                korn_ferry, champions. Omit for all.
+            limit: Rounds to return, 1-200 (default 20).
+            since: Optional YYYY-MM-DD; only rounds on or after it.
+
+        Returns:
+            Dict with player_name, player_id, tours, rounds (list of {tour,
+            espn_event_id, tournament, season, round, round_date, strokes,
+            to_par, holes, eagles, birdies, pars, bogeys,
+            double_bogeys_or_worse}) and summary ({last_5, last_10,
+            last_20}: rounds, avg_strokes, avg_to_par, avg_birdies,
+            avg_bogeys). Hole counts are None where the source publishes only
+            the round score (DP World, LPGA, some LIV rounds).
+
+        Example:
+            >>> r = client.get_golf_rounds("Scottie Scheffler", tour="pga")
+            >>> r["summary"]["last_5"]["avg_strokes"]
+        """
+        params: dict = {"limit": limit}
+        if tour:
+            params["tour"] = tour
+        if since:
+            params["since"] = since
+        return self._request("GET", f"/golf/players/{player}/rounds", params=params)
+
+    def get_golf_tournaments(
+        self,
+        tour: str | None = None,
+        season: int | None = None,
+        limit: int = 50,
+    ) -> list[dict]:
+        """
+        Golf tournaments we hold round data for, newest first, with player
+        and round counts. Free tier.
+
+        Args:
+            tour: Optional comma-separated tours (see get_golf_rounds).
+            season: Optional season year.
+            limit: 1-500 (default 50).
+        """
+        params: dict = {"limit": limit}
+        if tour:
+            params["tour"] = tour
+        if season:
+            params["season"] = season
+        return self._request("GET", "/golf/tournaments", params=params)
+
     # ------------------------------------------------------------------
     # Webhooks (Streaming tier)
     # ------------------------------------------------------------------

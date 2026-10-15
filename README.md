@@ -404,6 +404,18 @@ for b in r["books"]:
           f"margin {b['margin_pct']:.2f}%  ({b['props']:,} props)")
 ```
 
+### Golf round history (free)
+
+Every completed round for every golfer, by tour (pga, dp_world, liv, lpga,
+korn_ferry, champions), back to 2024, with last-5/10/20 averages.
+
+```python
+r = client.get_golf_rounds("Scottie Scheffler", tour="pga")
+print(r["summary"]["last_10"]["avg_strokes"])
+for rd in r["rounds"][:5]:
+    print(rd["tournament"], rd["round"], rd["strokes"], rd["to_par"])
+```
+
 ### Get resolved prop outcomes (Pro only)
 
 ```python

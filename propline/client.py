@@ -204,6 +204,7 @@ class PropLine:
         include_links: bool = False,
         include_book_ids: bool = False,
         include_depth: bool = False,
+        include_restricted: bool = False,
     ) -> dict | list[dict]:
         """
         Get current odds. If event_id is provided, returns odds for that event
@@ -249,6 +250,12 @@ class PropLine:
                 the book has nothing further or we do not read depth for
                 that book (sportsbooks). Omitted from the response unless
                 requested. PropLine-specific (``includeDepth=true``).
+            include_restricted: When True, PrizePicks projections marked
+                over-only also return their Under leg, and every PrizePicks
+                outcome carries ``allowed_wager_types`` (``"over"`` or
+                ``"under_or_over"``, PrizePicks' own value). By default the
+                excluded leg is left out. PropLine-specific
+                (``includeRestricted=true``).
             markets: List of market keys to filter by. If omitted, the
                 bulk /odds endpoint defaults to ``h2h`` and the per-event
                 /odds endpoint defaults to ``h2h,spreads,totals`` —
@@ -368,6 +375,8 @@ class PropLine:
             params["includeBookIds"] = "true"
         if include_depth:
             params["includeDepth"] = "true"
+        if include_restricted:
+            params["includeRestricted"] = "true"
 
         if event_id is not None:
             return self._request("GET", f"/sports/{sport}/events/{event_id}/odds", params=params)

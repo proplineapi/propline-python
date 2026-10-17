@@ -2088,6 +2088,7 @@ class PropLine:
         reconnect: bool = True,
         ws_url: str | None = None,
         on_truncated=None,
+        on_heartbeat=None,
     ):
         """
         Stream a websocket subscription as an async generator.
@@ -2106,6 +2107,12 @@ class PropLine:
         ``on_truncated(ready)`` fires when the server reports that events after
         your cursor aged out of retention. That is the one case streaming
         cannot make you whole — resync from the REST endpoints.
+
+        ``on_heartbeat(frame)`` fires on connect and every 25s with the books
+        we are still reading for this subscription's filters
+        (``frame["books"]``: bookmaker_key, sport_key, pregame_read_at,
+        read_age_seconds, reread_seconds, events). A quiet stream plus a
+        fresh heartbeat means prices unchanged, not feed down.
 
         Requires the optional extra::
 
@@ -2163,6 +2170,8 @@ class PropLine:
                             # out still resumes from the right place.
                             cursor = msg["seq"]
                             yield msg
+                        elif kind == "heartbeat" and on_heartbeat:
+                            on_heartbeat(msg)
                         # "ping" needs no reply — it only keeps idle proxies
                         # from closing the connection.
             except Exception as exc:

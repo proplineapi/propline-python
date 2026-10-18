@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "propline"
-version = "0.67.0"
+version = "0.68.0"
 description = "Python SDK for the PropLine player props betting odds API"
 readme = "README.md"
 license = {text = "MIT"}

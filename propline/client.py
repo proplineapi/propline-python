@@ -1800,6 +1800,77 @@ class PropLine:
             params["season"] = season
         return self._request("GET", "/golf/tournaments", params=params)
 
+    def get_injuries(
+        self,
+        sport: str,
+        team: str | None = None,
+        status: str | None = None,
+    ) -> dict:
+        """
+        Current injury report for a sport (free tier).
+
+        NFL, NCAAF, NBA, WNBA, NHL and MLB, from ESPN, refreshed every 10
+        minutes. Players ESPN lists as cleared are left out.
+
+        Args:
+            sport: football_nfl, football_ncaaf, basketball_nba,
+                basketball_wnba, hockey_nhl or baseball_mlb.
+            team: Optional team name or abbreviation (e.g. "KC").
+            status: Optional comma-separated status codes: out, doubtful,
+                questionable, probable, day_to_day, injured_list, suspended,
+                other.
+
+        Returns:
+            Dict with sport, count and players (list of {player_name,
+            player_id, espn_athlete_id, team, team_abbr, position, status,
+            status_code, injury_type, body_part, detail, side,
+            expected_return, status_since, source_updated_at}).
+            ``status_since`` is when the current status began.
+
+        Example:
+            >>> r = client.get_injuries("football_nfl", status="out,questionable")
+            >>> for p in r["players"]:
+            ...     print(p["player_name"], p["team_abbr"], p["status"])
+        """
+        params: dict = {}
+        if team:
+            params["team"] = team
+        if status:
+            params["status"] = status
+        return self._request("GET", f"/sports/{sport}/injuries", params=params)
+
+    def get_injury_history(
+        self,
+        sport: str,
+        days: int = 7,
+        player: str | None = None,
+    ) -> dict:
+        """
+        Every injury status change in the last ``days`` days, newest first
+        (free tier). History starts 2026-10-18.
+
+        Args:
+            sport: Same sports as get_injuries.
+            days: 1-90 (default 7).
+            player: Optional player name (case-insensitive substring).
+
+        Returns:
+            Dict with sport, days, count, truncated and changes (list of
+            {player_name, player_id, espn_athlete_id, team, old_status,
+            new_status, new_status_code, changed_at, source_updated_at}).
+            ``new_status`` is None when the player came off the report.
+            Capped at 2,000 rows (``truncated``).
+
+        Example:
+            >>> h = client.get_injury_history("basketball_nba", days=3)
+            >>> for c in h["changes"]:
+            ...     print(c["changed_at"], c["player_name"], c["old_status"], "->", c["new_status"])
+        """
+        params: dict = {"days": days}
+        if player:
+            params["player"] = player
+        return self._request("GET", f"/sports/{sport}/injuries/history", params=params)
+
     # ------------------------------------------------------------------
     # Webhooks (Streaming tier)
     # ------------------------------------------------------------------

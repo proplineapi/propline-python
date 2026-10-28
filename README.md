@@ -539,6 +539,29 @@ after a line was posted, `opening_*` means *first observed by us* rather
 than the book's true open — a value in minutes rather than hours is the
 tell.
 
+### Settle your bets (Hobby+)
+
+`settle_bets` returns won / lost / push / void / half_won / half_lost per bet,
+with the stat it settled on and the payout. Works for parlays, and for a book
+or line PropLine never stored.
+
+```python
+res = client.settle_bets([
+    {"ref": "b1", "sport_key": "baseball_mlb", "event_id": 150791,
+     "market": "totals", "selection": "Over", "side": "Over",
+     "point": 7.75, "price": -105, "stake": 10},
+    {"ref": "p1", "stake": 5, "legs": [
+        {"sport_key": "baseball_mlb", "event_id": 150791, "market": "h2h",
+         "selection": "Boston Red Sox", "price": -140},
+        {"sport_key": "baseball_mlb", "event_id": 150791,
+         "market": "pitcher_strikeouts", "selection": "Garrett Crochet",
+         "side": "Over", "point": 6.5, "price": 110},
+    ]},
+])
+for b in res["bets"]:
+    print(b["ref"], b["result"], b["profit"])
+```
+
 ### Grade your bets against the close (Hobby+)
 
 `get_odds_closing` gives you the closing line; `grade_clv` does the whole

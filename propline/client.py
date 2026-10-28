@@ -2374,6 +2374,40 @@ class PropLine:
         params = {"devig": devig} if devig else None
         return self._request("POST", "/clv/grade", json=bets, params=params)
 
+    def settle_bets(self, bets: list[dict]) -> dict:
+        """
+        Settle placed bets: won, lost, push, void, half_won or half_lost.
+
+        Singles or parlays. The book and the line are free: a bet at a book
+        PropLine does not carry, or at a line nobody posted, still settles
+        from the same box score the grader used (``source: "computed"``).
+        Asian quarter lines settle as two half-stakes. Stateless.
+
+        Hobby+ required. Free tier sees the structure with results hidden.
+
+        Args:
+            bets: Up to 200 bet dicts. A single bet has sport_key,
+                event_id, market, selection, and optionally side, point,
+                period, team (for a team total), bookmaker, price, stake
+                and ref. A parlay has ``legs`` (a list of those leg dicts,
+                each with its own price) plus optional price and stake.
+
+        Returns:
+            Dict with ``summary`` and ``bets``. Each bet has ``result``,
+            ``payout``, ``profit`` and ``legs``; each leg has ``result``,
+            ``actual_value``, ``source`` and, when unmatched, ``reason``.
+
+        Example:
+            >>> res = client.settle_bets([{
+            ...     "sport_key": "baseball_mlb", "event_id": 150791,
+            ...     "market": "totals", "selection": "Over", "side": "Over",
+            ...     "point": 7.75, "price": -105, "stake": 10,
+            ... }])
+            >>> res["bets"][0]["result"]
+            'half_won'
+        """
+        return self._request("POST", "/bets/settle", json=bets)
+
     def price_sgp(
         self,
         sport_key: str,

@@ -539,6 +539,23 @@ after a line was posted, `opening_*` means *first observed by us* rather
 than the book's true open — a value in minutes rather than hours is the
 tell.
 
+### Price a parlay across games (Hobby+)
+
+```python
+res = client.price_parlay([
+    {"sport_key": "basketball_nba", "event_id": 287401, "market": "h2h", "selection": "Detroit Pistons"},
+    {"sport_key": "basketball_nba", "event_id": 287402, "market": "h2h", "selection": "Atlanta Hawks"},
+], price=180)
+print(res["fair_price"], res["offered_ev_pct"], res["books"][:3])
+```
+
+### Find an event by another id (free)
+
+```python
+client.lookup_event_ids(book="pinnacle", book_event_id="1612345678")
+client.lookup_event_ids(mlb_game_pk=824785)
+```
+
 ### Settle your bets (Hobby+)
 
 `settle_bets` returns won / lost / push / void / half_won / half_lost per bet,

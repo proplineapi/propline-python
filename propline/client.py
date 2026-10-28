@@ -1705,6 +1705,38 @@ class PropLine:
         """
         return self._request("GET", f"/sports/{sport}/ids")
 
+    def lookup_event_ids(
+        self,
+        book: str | None = None,
+        book_event_id: str | list[str] | None = None,
+        espn_event_id: str | list[str] | None = None,
+        mlb_game_pk: int | str | list | None = None,
+    ) -> dict:
+        """
+        Find PropLine events from someone else's id (free tier).
+
+        Pass exactly one of ``book`` + ``book_event_id`` (a sportsbook's own
+        event id), ``espn_event_id`` or ``mlb_game_pk``; a list sends up to 50.
+
+        Returns:
+            Dict with ``events`` (the get_event_ids row plus query,
+            sport_key, status, completed, home_score, away_score) and
+            ``not_found``.
+
+        Example:
+            >>> client.lookup_event_ids(book="pinnacle", book_event_id="1612345678")
+        """
+        def _join(v):
+            return ",".join(str(x) for x in v) if isinstance(v, (list, tuple)) else str(v)
+        params = {"book": book}
+        if book_event_id is not None:
+            params["book_event_id"] = _join(book_event_id)
+        if espn_event_id is not None:
+            params["espn_event_id"] = _join(espn_event_id)
+        if mlb_game_pk is not None:
+            params["mlb_game_pk"] = _join(mlb_game_pk)
+        return self._request("GET", "/ids/lookup", params={k: v for k, v in params.items() if v is not None})
+
     def get_book_accuracy(
         self, days: int = 30, sport: str | None = None
     ) -> dict:
@@ -2407,6 +2439,35 @@ class PropLine:
             'half_won'
         """
         return self._request("POST", "/bets/settle", json=bets)
+
+    def price_parlay(
+        self, legs: list[dict], price: int | None = None, devig: str | None = None
+    ) -> dict:
+        """
+        Fair price of a parlay across games, and every book's price for it.
+
+        Each leg (sport_key, event_id, market, selection, optional side,
+        point, team, price) is matched to the no-vig fair line /ev uses.
+        Returns fair_prob / fair_price for the parlay, best_legs_price,
+        ``books`` (each book that prices every leg, with ev_pct) and
+        offered_ev_pct when ``price`` is given. Legs on the same event are
+        flagged ``same_game`` (the fair price assumes independent legs).
+        2-15 legs. Hobby+.
+
+        Example:
+            >>> client.price_parlay([
+            ...     {"sport_key": "basketball_nba", "event_id": 287401,
+            ...      "market": "h2h", "selection": "Detroit Pistons"},
+            ...     {"sport_key": "basketball_nba", "event_id": 287402,
+            ...      "market": "h2h", "selection": "Atlanta Hawks"},
+            ... ], price=180)
+        """
+        body = {"legs": legs}
+        if price is not None:
+            body["price"] = price
+        if devig:
+            body["devig"] = devig
+        return self._request("POST", "/parlay/price", json=body)
 
     def price_sgp(
         self,

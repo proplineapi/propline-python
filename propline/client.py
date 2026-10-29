@@ -29,6 +29,7 @@ import hmac
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any
+from urllib.parse import quote
 
 import httpx
 
@@ -1902,6 +1903,86 @@ class PropLine:
         if player:
             params["player"] = player
         return self._request("GET", f"/sports/{sport}/injuries/history", params=params)
+
+    def get_referees(
+        self,
+        sport: str,
+        search: str | None = None,
+        since: str | None = None,
+        until: str | None = None,
+    ) -> dict:
+        """
+        Referee card stats for a sport (free tier). Only ``soccer_epl`` today;
+        other sports return 404 ``referees_not_available``.
+
+        Args:
+            sport: Sport key (``soccer_epl``).
+            search: Optional referee name substring.
+            since: Optional start date, YYYY-MM-DD.
+            until: Optional end date, YYYY-MM-DD.
+
+        Returns:
+            Dict with sport, count and referees (list of {referee, matches,
+            yellow_cards, red_cards, yellow_cards_per_match,
+            red_cards_per_match, cards_per_match, last_match, next_match}).
+
+        Example:
+            >>> r = client.get_referees("soccer_epl")
+            >>> for ref in r["referees"]:
+            ...     print(ref["referee"], ref["matches"], ref["cards_per_match"])
+        """
+        params: dict = {}
+        if search:
+            params["search"] = search
+        if since:
+            params["since"] = since
+        if until:
+            params["until"] = until
+        return self._request("GET", f"/sports/{sport}/referees", params=params)
+
+    def get_referee_matches(
+        self,
+        sport: str,
+        name: str,
+        since: str | None = None,
+        until: str | None = None,
+        limit: int | None = None,
+    ) -> dict:
+        """
+        One referee's summary plus their matches with per-team cards
+        (free tier). Only ``soccer_epl`` today.
+
+        Args:
+            sport: Sport key (``soccer_epl``).
+            name: Referee name (e.g. "Michael Oliver").
+            since: Optional start date, YYYY-MM-DD.
+            until: Optional end date, YYYY-MM-DD.
+            limit: Optional max matches, 1-500 (default 100).
+
+        Returns:
+            Dict with the referee summary fields plus match_count and
+            matches (list of {referee, event_id, commence_time, status,
+            home_team, away_team, home_score, away_score, yellow_cards,
+            red_cards, home_yellow_cards, home_red_cards,
+            away_yellow_cards, away_red_cards}).
+
+        Example:
+            >>> m = client.get_referee_matches("soccer_epl", "Michael Oliver", limit=10)
+            >>> for g in m["matches"]:
+            ...     print(g["commence_time"][:10], g["home_team"], g["away_team"], g["yellow_cards"])
+        """
+        params: dict = {}
+        if since:
+            params["since"] = since
+        if until:
+            params["until"] = until
+        if limit is not None:
+            params["limit"] = limit
+        return self._request(
+            "GET",
+            f"/sports/{sport}/referees/{quote(name, safe='')}/matches",
+            params=params,
+        )
 
     # ------------------------------------------------------------------
     # Webhooks (Streaming tier)

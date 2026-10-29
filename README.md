@@ -419,6 +419,22 @@ for c in h["changes"]:
     print(c["changed_at"], c["player_name"], c["old_status"], "->", c["new_status"])
 ```
 
+### Referee card stats (free)
+
+Card counts per referee, and each referee's matches with per-team cards.
+Premier League (`soccer_epl`) only today.
+
+```python
+r = client.get_referees("soccer_epl", since="2026-08-01")
+for ref in r["referees"]:
+    print(ref["referee"], ref["matches"], ref["cards_per_match"])
+
+m = client.get_referee_matches("soccer_epl", "Michael Oliver", limit=10)
+for g in m["matches"]:
+    print(g["commence_time"][:10], g["home_team"], "v", g["away_team"],
+          g["home_yellow_cards"], g["away_yellow_cards"])
+```
+
 ### Golf round history (free)
 
 Every completed round for every golfer, by tour (pga, dp_world, liv, lpga,

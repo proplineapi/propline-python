@@ -1912,8 +1912,11 @@ class PropLine:
         until: str | None = None,
     ) -> dict:
         """
-        Referee card stats for a sport (free tier). Only ``soccer_epl`` today;
-        other sports return 404 ``referees_not_available``.
+        Referee card stats for a sport (free tier). 32 soccer leagues: the
+        Premier League plus La Liga, Serie A, Bundesliga, Ligue 1, MLS,
+        Championship, Eredivisie, Liga MX, Brasileirao, the UEFA cups,
+        Libertadores, Sudamericana and others. Other sports return 404
+        ``referees_not_available`` with ``available_sports``.
 
         Args:
             sport: Sport key (``soccer_epl``).
@@ -1950,7 +1953,8 @@ class PropLine:
     ) -> dict:
         """
         One referee's summary plus their matches with per-team cards
-        (free tier). Only ``soccer_epl`` today.
+        (free tier). Same 32 soccer leagues as ``get_referees``; other sports
+        return 404 ``referees_not_available``.
 
         Args:
             sport: Sport key (``soccer_epl``).
@@ -1983,6 +1987,58 @@ class PropLine:
             f"/sports/{sport}/referees/{quote(name, safe='')}/matches",
             params=params,
         )
+
+    def get_market_coverage(
+        self,
+        sport: str,
+        days: int | None = None,
+        periods: bool | None = None,
+    ) -> dict:
+        """
+        Every market each book is pricing on a sport's games in the next
+        ``days`` days, and on how many of those games (free tier).
+
+        Args:
+            sport: Sport key (``football_nfl``).
+            days: Games starting in the next N days, 1-7 (default 3).
+            periods: Include quarter / half / inning markets (default False).
+
+        Returns:
+            Dict with sport_key, days, events (games in the window) and
+            bookmakers (list of {key, title, events, prop_market_count,
+            game_lines, props}). Each game_lines / props entry is
+            {market, period, events, markets, last_update}.
+
+        Example:
+            >>> c = client.get_market_coverage("football_nfl", days=3)
+            >>> for b in c["bookmakers"]:
+            ...     print(b["key"], b["events"], "of", c["events"], b["prop_market_count"])
+        """
+        params: dict = {"sport": sport}
+        if days is not None:
+            params["days"] = days
+        if periods is not None:
+            params["periods"] = "true" if periods else "false"
+        return self._request("GET", "/coverage/markets", params=params)
+
+    def get_history_coverage(self, sport: str) -> dict:
+        """
+        When each book's odds history starts for a sport (free tier).
+
+        Args:
+            sport: Sport key (``baseball_mlb``).
+
+        Returns:
+            Dict with sport_key and bookmakers (list of {key, title,
+            history_start, game_lines_start, props_start, latest_event,
+            events, retired}).
+
+        Example:
+            >>> h = client.get_history_coverage("baseball_mlb")
+            >>> for b in h["bookmakers"]:
+            ...     print(b["key"], b["history_start"], b["props_start"])
+        """
+        return self._request("GET", "/coverage/history", params={"sport": sport})
 
     # ------------------------------------------------------------------
     # Webhooks (Streaming tier)

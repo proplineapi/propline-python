@@ -422,7 +422,8 @@ for c in h["changes"]:
 ### Referee card stats (free)
 
 Card counts per referee, and each referee's matches with per-team cards.
-Premier League (`soccer_epl`) only today.
+32 soccer leagues (Premier League, La Liga, Serie A, Bundesliga, Ligue 1,
+MLS and more); other sports return 404 with `available_sports`.
 
 ```python
 r = client.get_referees("soccer_epl", since="2026-08-01")
@@ -433,6 +434,21 @@ m = client.get_referee_matches("soccer_epl", "Michael Oliver", limit=10)
 for g in m["matches"]:
     print(g["commence_time"][:10], g["home_team"], "v", g["away_team"],
           g["home_yellow_cards"], g["away_yellow_cards"])
+```
+
+### Book coverage (free)
+
+Which markets each book prices on upcoming games, and when each book's
+history starts.
+
+```python
+c = client.get_market_coverage("football_nfl", days=3)
+for b in c["bookmakers"]:
+    print(b["key"], b["events"], "of", c["events"], "games,", b["prop_market_count"], "prop markets")
+
+h = client.get_history_coverage("baseball_mlb")
+for b in h["bookmakers"]:
+    print(b["key"], b["history_start"], b["props_start"])
 ```
 
 ### Golf round history (free)

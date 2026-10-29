@@ -1712,12 +1712,22 @@ class PropLine:
         book_event_id: str | list[str] | None = None,
         espn_event_id: str | list[str] | None = None,
         mlb_game_pk: int | str | list | None = None,
+        sport: str | None = None,
+        home: str | None = None,
+        away: str | None = None,
+        kickoff: str | None = None,
+        window_hours: float | None = None,
     ) -> dict:
         """
         Find PropLine events from someone else's id (free tier).
 
         Pass exactly one of ``book`` + ``book_event_id`` (a sportsbook's own
         event id), ``espn_event_id`` or ``mlb_game_pk``; a list sends up to 50.
+
+        Or by names: ``sport`` + ``home`` + ``away`` + ``kickoff`` (ISO 8601)
+        returns every event with those two teams (either order) within
+        ``window_hours`` (default 6), closest first; ``ambiguous`` is true
+        when more than one matches.
 
         Returns:
             Dict with ``events`` (the get_event_ids row plus query,
@@ -1726,10 +1736,13 @@ class PropLine:
 
         Example:
             >>> client.lookup_event_ids(book="pinnacle", book_event_id="1612345678")
+            >>> client.lookup_event_ids(sport="soccer_epl", home="Chelsea",
+            ...     away="Man Utd", kickoff="2026-10-31T12:30:00Z")
         """
         def _join(v):
             return ",".join(str(x) for x in v) if isinstance(v, (list, tuple)) else str(v)
-        params = {"book": book}
+        params = {"book": book, "sport": sport, "home": home, "away": away,
+                  "kickoff": kickoff, "window_hours": window_hours}
         if book_event_id is not None:
             params["book_event_id"] = _join(book_event_id)
         if espn_event_id is not None:

@@ -463,7 +463,7 @@ for rd in r["rounds"][:5]:
     print(rd["tournament"], rd["round"], rd["strokes"], rd["to_par"])
 ```
 
-### Get resolved prop outcomes (Pro only)
+### Get resolved prop outcomes (Hobby+ full, Free 403)
 
 ```python
 results = client.get_results("baseball_mlb", event_id=16,
@@ -708,7 +708,7 @@ for p in res["players"]:
 Pass a `player_id` anywhere a player name is accepted in
 `get_player_history` / `get_player_trends`; both responses carry `player_id`.
 
-### Get player prop history (Pro full, Free redacted)
+### Get player prop history (Hobby+ full, Free redacted)
 
 ```python
 # "Did Bryan Woo go over/under his last 10 strikeout props?"
@@ -755,7 +755,7 @@ game with a box score on file, including games no sportsbook priced, so a
 "last 10 games" window here really is the last 10 games. It carries no line,
 price or grade; use `get_player_trends` for hit rates against a posted line.
 
-### Get player hit-rate trends (Pro full, Free redacted)
+### Get player hit-rate trends (Hobby+ full, Free redacted)
 
 ```python
 # "How often has Aaron Judge gone over his total bases line lately?"
@@ -776,7 +776,7 @@ for m in trends["markets"]:
 # Output: "batter_total_bases: line 1.5, avg 2.02, L10 3-7 (30.0% over), streak 2 under"
 ```
 
-### Cross-book +EV (Pro)
+### Cross-book +EV (Hobby+ full, Free redacted)
 
 ```python
 # Find +EV plays on a single event. A sharp book anchors the no-vig
@@ -853,7 +853,7 @@ quotes aren't independently bettable payouts; Underdog is included only
 at clean two-way lines. Each price carries `last_update` so you can
 discount stale quotes.
 
-### Bulk CSV export of resolved props (Pro)
+### Bulk CSV export of resolved props (Pro+)
 
 ```python
 # Save every resolved MLB strikeout prop since April 1st to disk.

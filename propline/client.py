@@ -15,7 +15,7 @@ Usage:
     # Get player props for a game
     odds = client.get_odds("basketball_nba", event_id=21, markets=["player_points", "player_rebounds"])
 
-    # Get historical line movement (Pro only)
+    # Get historical line movement (Hobby+ full, Free redacted)
     history = client.get_odds_history("baseball_mlb", event_id=16, markets=["pitcher_strikeouts"])
 
     # Get a player's recent resolved prop history (Pro full, Free redacted)
@@ -423,7 +423,7 @@ class PropLine:
         """
         Get historical odds movement for an event.
 
-        Pro tier returns full snapshot history. Free tier returns market
+        Hobby+ returns full snapshot history. Free tier returns market
         structure with snapshot counts (redacted=True, snapshots_available=N)
         and an upgrade_url.
 
@@ -872,9 +872,8 @@ class PropLine:
         """
         Get resolved prop outcomes with actual player stats.
 
-        Pro tier returns full resolution data. Free tier returns the market
-        structure with odds and lines visible but resolution/actual_value
-        redacted (null, redacted=True) plus an upgrade_url.
+        Hobby+ returns full resolution data. Free tier gets a 403 with an
+        upgrade message.
 
         Args:
             sport: Sport key
@@ -966,7 +965,7 @@ class PropLine:
         + resolution + actual value. Use this to answer "did X go over/under
         in their last N games?" without reconstructing it from raw outcomes.
 
-        Pro tier returns full data. Free tier returns event structure with
+        Hobby+ returns full data. Free tier returns event structure with
         resolution/actual_value/prices nulled and ``redacted=True``.
 
         Args:
@@ -1221,7 +1220,8 @@ class PropLine:
         payout odds. Lines without sharp-anchor coverage on this event are
         dropped from the response.
 
-        Pro tier required (returns 403 on free).
+        Hobby+ returns the full +EV math; Free gets the price grid with
+        EV fields nulled (redacted=True).
 
         Args:
             sport: Sport key (e.g. "baseball_mlb").
@@ -1457,7 +1457,7 @@ class PropLine:
         anchor, no-vig devigging) but takes one user price as input
         instead of returning every covered book's price as output.
 
-        Pro tier required.
+        Hobby+ required (403 on free).
 
         Args:
             sport: Sport key (e.g. "baseball_mlb").

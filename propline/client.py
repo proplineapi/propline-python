@@ -2085,7 +2085,14 @@ class PropLine:
             url: HTTPS URL that will receive POSTed events.
             events: Event types to subscribe to. Default: all.
                 Valid values: "line_movement", "resolution", "steam",
-                "market_suspended", "ev", "line_added", "line_pulled".
+                "market_suspended", "ev", "line_added", "line_pulled",
+                "availability", "stat_update", "play".
+                ``play`` is live NBA play-by-play, one delivery per play
+                (``action_number``, ``status`` new/edited/deleted,
+                ``period``, ``clock``, ``team``, ``player``,
+                ``other_players``, ``action_type``, ``shot_result``,
+                ``points``, ``description``, ``home_score`` /
+                ``away_score``); dedupe on (game_id, action_number, status).
                 ``line_added`` / ``line_pulled`` are opt-in (never in the
                 default): a book posted a new line on a game it already
                 prices or a pulled line returned (``reason`` "new" /

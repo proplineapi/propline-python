@@ -559,6 +559,74 @@ class PropLine:
             "GET", f"/sports/{sport}/events/{event_id}/odds/closing", params=params
         )
 
+    def get_depth_history(
+        self,
+        sport: str,
+        event_id: int | str,
+        markets: list[str] | None = None,
+        bookmakers: str | list[str] | None = None,
+        from_: str | None = None,
+        to: str | None = None,
+        interval: str | None = None,
+        period: str | list[str] | None = None,
+        limit: int | None = None,
+    ) -> dict:
+        """
+        Order-book depth history for one event on the exchanges (Kalshi,
+        Polymarket, Polymarket US, ProphetX): every recorded change of an
+        outcome's best price, takeable size (``liquidity``, dollars) and the
+        levels beyond it (``depth``). Recorded from 2026-11-10. Hobby+.
+
+        Args:
+            sport: Sport key
+            event_id: Event ID
+            markets: Market keys (default: h2h,spreads,totals)
+            bookmakers: Book keys (default: the four exchanges)
+            from_: ISO timestamp; states at or after. Pass the response's
+                ``next_from`` here to get the next page.
+            to: ISO timestamp; states at or before
+            interval: Keep the last state per outcome per bucket
+                ("30s", "1m", "5m", "15m", "30m", "1h")
+            period: Game-period filter
+            limit: States per page (default 5000, max 20000)
+
+        Example:
+            >>> page = client.get_depth_history("football_nfl", 24859,
+            ...                                 bookmakers=["kalshi"])
+            >>> while True:
+            ...     for book in page["bookmakers"]:
+            ...         for m in book["markets"]:
+            ...             for o in m["outcomes"]:
+            ...                 for s in o["snapshots"]:
+            ...                     print(s["recorded_at"], s["price"], s["liquidity"])
+            ...     if not page["next_from"]:
+            ...         break
+            ...     page = client.get_depth_history("football_nfl", 24859,
+            ...                                     bookmakers=["kalshi"],
+            ...                                     from_=page["next_from"])
+        """
+        params: dict[str, str] = {}
+        if markets:
+            params["markets"] = ",".join(markets)
+        if bookmakers:
+            params["bookmakers"] = (
+                bookmakers if isinstance(bookmakers, str) else ",".join(bookmakers)
+            )
+        if from_:
+            params["from"] = from_
+        if to:
+            params["to"] = to
+        if interval:
+            params["interval"] = interval
+        if period is not None:
+            params["period"] = period if isinstance(period, str) else ",".join(period)
+        if limit is not None:
+            params["limit"] = str(limit)
+        return self._request(
+            "GET", f"/sports/{sport}/events/{event_id}/odds/depth/history",
+            params=params,
+        )
+
     def get_scores(
         self,
         sport: str,

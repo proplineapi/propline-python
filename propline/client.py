@@ -1504,6 +1504,33 @@ class PropLine:
             params=params,
         )
 
+    def get_parlay_link(self, outcome_ids: list[int | str] | str) -> dict:
+        """
+        One bet-slip link that puts several legs on a book's slip.
+
+        Pass PropLine outcome ids (``outcome_id`` on
+        ``get_event_best_line(..., include_links=True)`` price rows), 1-12,
+        all at one book: DraftKings, FanDuel or Fanatics. The link LOADS the
+        legs; the book may still refuse to combine them, so check the slip.
+        No prices; every tier.
+
+        Returns:
+            Dict with ``book``, ``book_title``, ``bet_link``, ``legs`` (each
+            with outcome_id, event_id, market_key, period, name,
+            description, point, book_event_id, book_market_id,
+            book_outcome_id) and ``note``.
+
+        Example:
+            >>> client.get_parlay_link([16263784960, 16263949931])["bet_link"]
+        """
+        ids = (
+            outcome_ids if isinstance(outcome_ids, str)
+            else ",".join(str(i) for i in outcome_ids)
+        )
+        return self._request(
+            "GET", "/bet-links/parlay", params={"outcome_ids": ids}
+        )
+
     def calc_event_ev(
         self,
         sport: str,

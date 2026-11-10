@@ -235,6 +235,18 @@ for line in bl["lines"]:
         print(f"{side}: {best['price']} @ {best['book_title']} -> {best['link']}")
 ```
 
+### Bet-slip links (single and multi-leg)
+
+With `include_links=True`, best-line price rows also carry `bet_link`
+(DraftKings, FanDuel, Fanatics, BetMGM: that selection on the slip) and
+`outcome_id`. Pass several `outcome_id`s at one book (DraftKings, FanDuel
+or Fanatics) to `get_parlay_link` for one link with every leg. The link
+loads the legs; the book may still refuse the combination.
+
+```python
+link = client.get_parlay_link([16263784960, 16263949931])["bet_link"]
+```
+
 ### Native book ids (join onto a book's own data)
 
 `get_odds` accepts `include_book_ids=True` — each bookmaker block then

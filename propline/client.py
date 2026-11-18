@@ -2181,7 +2181,13 @@ class PropLine:
             events: Event types to subscribe to. Default: all.
                 Valid values: "line_movement", "resolution", "steam",
                 "market_suspended", "ev", "line_added", "line_pulled",
-                "availability", "stat_update", "play".
+                "availability", "stat_update", "play", "game_state",
+                "injury".
+                ``injury`` is one delivery per injury status change
+                (``player_name``, ``player_id``, ``team``, ``old_status``,
+                ``new_status`` (None when off the report),
+                ``new_status_code``, ``injury_type``, ``expected_return``,
+                ``changed_at``); reports are read every 10 minutes.
                 ``play`` is live NBA play-by-play, one delivery per play
                 (``action_number``, ``status`` new/edited/deleted,
                 ``period``, ``clock``, ``team``, ``player``,

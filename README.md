@@ -646,6 +646,25 @@ client.untrack_bet(bet_id)
 Sending the same `ref` again returns the bet already held. A bet that cannot be
 matched comes back `status: "rejected"` with a `reason` and is not stored.
 
+### Verified records: a public pick history (Hobby+)
+
+A public page at `prop-line.com/record/{handle}` with your record, units and ROI.
+Picks must arrive before the game, at a price a sportsbook was showing, and can
+never be deleted.
+
+```python
+client.create_record("sharp_guy", "Sharp Guy", bio="NBA props")
+res = client.add_verified_picks([
+    {"ref": "nov22-1", "stake": 1, "sport_key": "basketball_nba",
+     "event_id": 412345, "market": "player_points",
+     "selection": "Jayson Tatum", "side": "Over", "point": 27.5, "price": -115},
+])
+res["bets"][0]["status"]      # "open", or "rejected" with a reason
+
+rec = client.get_record("sharp_guy")   # anyone can read a record
+rec["all_time"]["roi_pct"]
+```
+
 ### Grade your bets against the close (Hobby+)
 
 `get_odds_closing` gives you the closing line; `grade_clv` does the whole

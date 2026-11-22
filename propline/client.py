@@ -2775,8 +2775,90 @@ class PropLine:
         return self._request("GET", f"/bets/{bet_id}")
 
     def untrack_bet(self, bet_id: int) -> None:
-        """Stop tracking a bet. No webhook is sent for it afterwards."""
+        """Stop tracking a bet. No webhook is sent for it afterwards.
+
+        A verified pick (see :meth:`add_verified_picks`) cannot be removed.
+        """
         self._request("DELETE", f"/bets/{bet_id}")
+
+    def create_record(
+        self,
+        handle: str | None = None,
+        display_name: str | None = None,
+        bio: str | None = None,
+    ) -> dict:
+        """
+        Create your public verified record, or edit its name / bio.
+
+        The record lives at ``https://prop-line.com/record/{handle}``.
+        One per account. Hobby+ required.
+
+        Args:
+            handle: 3-30 characters (a-z, 0-9, ``_`` or ``-``). Required
+                the first time; fixed once set.
+            display_name: Shown on the page (up to 40 characters).
+            bio: One line, up to 160 characters.
+
+        Returns:
+            Dict with ``handle``, ``display_name``, ``bio`` and ``url``.
+        """
+        body = {k: v for k, v in
+                {"handle": handle, "display_name": display_name, "bio": bio}.items()
+                if v is not None}
+        return self._request("POST", "/record", json=body)
+
+    def get_my_record(self) -> dict:
+        """Your record profile (``handle``, ``display_name``, ``bio``, ``url``)."""
+        return self._request("GET", "/record")
+
+    def add_verified_picks(self, picks: list[dict]) -> dict:
+        """
+        Add picks to your public verified record.
+
+        Same bet dicts as :meth:`track_bets`; every leg needs a ``price``.
+        A pick is accepted only when its game has not started and its
+        price is no better than the best price a sportsbook PropLine
+        carries was showing for that exact selection and line. Stakes are
+        units (max 5, default 1); full-game markets only; parlays up to 10
+        legs, one leg per game. Picks cannot be edited or deleted. Up to 50
+        a day.
+
+        Returns:
+            Same shape as :meth:`track_bets`. A refused pick has
+            ``status: "rejected"`` and a ``reason`` such as
+            ``event_started``, ``price_not_available`` or
+            ``no_market_price``.
+
+        Example:
+            >>> client.create_record("sharp_guy", "Sharp Guy")
+            >>> res = client.add_verified_picks([{
+            ...     "ref": "nov22-1", "stake": 1,
+            ...     "sport_key": "basketball_nba", "event_id": 412345,
+            ...     "market": "player_points", "selection": "Jayson Tatum",
+            ...     "side": "Over", "point": 27.5, "price": -115,
+            ... }])
+        """
+        return self._request("POST", "/record/picks", json=picks)
+
+    def get_record(
+        self, handle: str, limit: int = 100, before_id: int | None = None
+    ) -> dict:
+        """
+        A tipster's public verified record. No paid plan needed.
+
+        Returns:
+            Dict with ``handle``, ``display_name``, ``all_time`` and
+            ``last_30_days`` (``picks``, ``won``, ``lost``,
+            ``push_or_void``, ``win_pct``, ``units_staked``,
+            ``units_profit``, ``roi_pct``), ``pending``,
+            ``not_yet_started`` and ``picks`` (newest first; a pick is
+            listed once its game has started). Page with ``before_id`` =
+            ``next_before_id``.
+        """
+        params: dict[str, Any] = {"limit": limit}
+        if before_id is not None:
+            params["before_id"] = before_id
+        return self._request("GET", f"/records/{handle}", params=params)
 
     def price_parlay(
         self, legs: list[dict], price: int | None = None, devig: str | None = None

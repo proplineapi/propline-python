@@ -2021,14 +2021,17 @@ class PropLine:
         event_id: int | None = None,
     ) -> dict:
         """
-        Projected and confirmed starting lineups (free tier). NBA only.
+        Lineups for NBA, NFL and NHL (free tier).
 
-        Read from the NBA's own lineups file every 60 seconds. Before a team
-        confirms, only its five expected starters are listed; once confirmed,
-        the bench and inactive players are listed too.
+        NBA: the NBA's own lineups file, every 60 seconds. Five expected
+        starters per team, then the confirmed lineup with bench and inactive
+        players. NFL: ESPN's game roster from six hours before kickoff
+        (starters, bench, inactives); expected until 90 minutes before
+        kickoff, then confirmed. NHL: scratches, the dressed roster and the
+        starting goalie once the teams file them (no projections).
 
         Args:
-            sport: basketball_nba.
+            sport: basketball_nba, football_nfl or hockey_nhl.
             team: Optional team name or abbreviation (e.g. "BOS").
             event_id: Optional PropLine event id.
 
@@ -2037,8 +2040,8 @@ class PropLine:
             source_game_id, teams}). Each team has team_abbr, team, home,
             status ("expected" or "confirmed"), updated_at and players (list
             of {player_name, player_id, position, role, status, since}).
-            ``role`` is starter, bench or inactive; ``since`` is when we first
-            saw that role and status.
+            ``role`` is starter, bench, active (NHL: dressed) or inactive;
+            ``since`` is when we first saw that role.
 
         Example:
             >>> r = client.get_lineups("basketball_nba", team="BOS")
@@ -2066,7 +2069,7 @@ class PropLine:
         tier). History starts 2026-11-22.
 
         Args:
-            sport: basketball_nba.
+            sport: basketball_nba, football_nfl or hockey_nhl.
             days: 1-90 (default 7).
             player: Optional player name (case-insensitive substring).
             event_id: Optional PropLine event id.

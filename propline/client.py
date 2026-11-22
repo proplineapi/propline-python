@@ -164,6 +164,8 @@ class PropLine:
             detail = resp.json().get("detail", resp.text) if resp.text else str(resp.status_code)
             raise PropLineError(resp.status_code, detail)
 
+        if resp.status_code == 204 or not resp.content:
+            return None
         return resp.json()
 
     def get_sports(self) -> list[dict]:
@@ -2182,7 +2184,11 @@ class PropLine:
                 Valid values: "line_movement", "resolution", "steam",
                 "market_suspended", "ev", "line_added", "line_pulled",
                 "availability", "stat_update", "play", "game_state",
-                "injury".
+                "injury", "bet_settled", "bet_regraded".
+                ``bet_settled`` / ``bet_regraded`` carry the result of a
+                bet registered with :meth:`track_bets` (``bet_id``, ``ref``,
+                ``result``, ``payout``, ``profit``, ``legs``; a regrade
+                adds ``previous_result``). Only your own bets are sent.
                 ``injury`` is one delivery per injury status change
                 (``player_name``, ``player_id``, ``team``, ``old_status``,
                 ``new_status`` (None when off the report),
@@ -2697,6 +2703,80 @@ class PropLine:
             'half_won'
         """
         return self._request("POST", "/bets/settle", json=bets)
+
+    def track_bets(self, bets: list[dict]) -> dict:
+        """
+        Register bets once; PropLine settles them when their games grade.
+
+        Same bet dicts as :meth:`settle_bets`, plus an optional ``ref``
+        (sending the same ``ref`` again returns the bet already held, so a
+        retry is safe). Each bet is settled when its games are graded and
+        pushed to your webhooks as a ``bet_settled`` event; an official
+        stat correction that changes a sent result pushes ``bet_regraded``.
+        A bet that cannot be matched comes back ``status: "rejected"``
+        with a ``reason`` and is not stored.
+
+        Hobby+ required. Hobby and Pro hold 500 open bets and read results
+        with :meth:`list_tracked_bets`; Streaming Lite (10,000) and
+        Streaming (100,000) also get the webhook push.
+
+        Args:
+            bets: Up to 200 bet dicts (see :meth:`settle_bets`).
+
+        Returns:
+            Dict with ``bets`` (each with ``bet_id``, ``ref``, ``status``,
+            ``result``, ``legs``), ``open_bets``, ``open_bet_limit`` and
+            ``push``.
+
+        Example:
+            >>> res = client.track_bets([{
+            ...     "ref": "slip-123", "stake": 10,
+            ...     "sport_key": "basketball_nba", "event_id": 412345,
+            ...     "market": "player_points", "selection": "Jayson Tatum",
+            ...     "side": "Over", "point": 27.5, "price": -115,
+            ... }])
+            >>> res["bets"][0]["status"]
+            'open'
+        """
+        return self._request("POST", "/bets", json=bets)
+
+    def list_tracked_bets(
+        self,
+        status: str | None = None,
+        since: str | None = None,
+        before_id: int | None = None,
+        limit: int = 100,
+    ) -> dict:
+        """
+        List tracked bets, newest first.
+
+        Args:
+            status: "open", "settled" or "expired". Default: all.
+            since: ISO timestamp; only bets settled or regraded at or after it.
+            before_id: Page back from this ``bet_id`` (``next_before_id``
+                from the previous page).
+            limit: 1-500.
+
+        Returns:
+            Dict with ``bets``, ``open_bets``, ``open_bet_limit``, ``push``
+            and ``next_before_id``.
+        """
+        params: dict[str, Any] = {"limit": limit}
+        if status:
+            params["status"] = status
+        if since:
+            params["since"] = since
+        if before_id is not None:
+            params["before_id"] = before_id
+        return self._request("GET", "/bets", params=params)
+
+    def get_tracked_bet(self, bet_id: int) -> dict:
+        """One tracked bet: status, result, payout, profit and legs."""
+        return self._request("GET", f"/bets/{bet_id}")
+
+    def untrack_bet(self, bet_id: int) -> None:
+        """Stop tracking a bet. No webhook is sent for it afterwards."""
+        self._request("DELETE", f"/bets/{bet_id}")
 
     def price_parlay(
         self, legs: list[dict], price: int | None = None, devig: str | None = None

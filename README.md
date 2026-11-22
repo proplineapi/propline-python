@@ -623,6 +623,29 @@ for b in res["bets"]:
     print(b["ref"], b["result"], b["profit"])
 ```
 
+### Track bets: we settle them and push the result (Hobby+)
+
+`track_bets` takes the same bets as `settle_bets`, holds them, and settles each
+when its games are graded. Streaming Lite and above get a `bet_settled` webhook
+(and `bet_regraded` if an official stat correction changes the result); Hobby
+and Pro read results with `list_tracked_bets`.
+
+```python
+res = client.track_bets([
+    {"ref": "slip-123", "stake": 10, "sport_key": "basketball_nba",
+     "event_id": 412345, "market": "player_points",
+     "selection": "Jayson Tatum", "side": "Over", "point": 27.5, "price": -115},
+])
+bet_id = res["bets"][0]["bet_id"]          # status "open"
+
+client.list_tracked_bets(status="settled")  # newest first
+client.get_tracked_bet(bet_id)
+client.untrack_bet(bet_id)
+```
+
+Sending the same `ref` again returns the bet already held. A bet that cannot be
+matched comes back `status: "rejected"` with a `reason` and is not stored.
+
 ### Grade your bets against the close (Hobby+)
 
 `get_odds_closing` gives you the closing line; `grade_clv` does the whole

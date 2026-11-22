@@ -2014,6 +2014,83 @@ class PropLine:
             params["player"] = player
         return self._request("GET", f"/sports/{sport}/injuries/history", params=params)
 
+    def get_lineups(
+        self,
+        sport: str,
+        team: str | None = None,
+        event_id: int | None = None,
+    ) -> dict:
+        """
+        Projected and confirmed starting lineups (free tier). NBA only.
+
+        Read from the NBA's own lineups file every 60 seconds. Before a team
+        confirms, only its five expected starters are listed; once confirmed,
+        the bench and inactive players are listed too.
+
+        Args:
+            sport: basketball_nba.
+            team: Optional team name or abbreviation (e.g. "BOS").
+            event_id: Optional PropLine event id.
+
+        Returns:
+            Dict with sport, count and games (list of {event_id, game_date,
+            source_game_id, teams}). Each team has team_abbr, team, home,
+            status ("expected" or "confirmed"), updated_at and players (list
+            of {player_name, player_id, position, role, status, since}).
+            ``role`` is starter, bench or inactive; ``since`` is when we first
+            saw that role and status.
+
+        Example:
+            >>> r = client.get_lineups("basketball_nba", team="BOS")
+            >>> for g in r["games"]:
+            ...     for t in g["teams"]:
+            ...         starters = [p["player_name"] for p in t["players"] if p["role"] == "starter"]
+            ...         print(t["team_abbr"], t["status"], starters)
+        """
+        params: dict = {}
+        if team:
+            params["team"] = team
+        if event_id is not None:
+            params["event_id"] = event_id
+        return self._request("GET", f"/sports/{sport}/lineups", params=params)
+
+    def get_lineup_history(
+        self,
+        sport: str,
+        days: int = 7,
+        player: str | None = None,
+        event_id: int | None = None,
+    ) -> dict:
+        """
+        Every lineup change in the last ``days`` days, newest first (free
+        tier). History starts 2026-11-22.
+
+        Args:
+            sport: basketball_nba.
+            days: 1-90 (default 7).
+            player: Optional player name (case-insensitive substring).
+            event_id: Optional PropLine event id.
+
+        Returns:
+            Dict with sport, days, count, truncated and changes (list of
+            {event_id, game_date, team_abbr, team, player_name, player_id,
+            position, old_role, new_role, old_status, new_status, changed_at,
+            source_updated_at}). ``old_role`` is None when a player is first
+            listed; ``new_role`` is None when he is dropped from the lineup.
+            Capped at 2,000 rows (``truncated``).
+
+        Example:
+            >>> h = client.get_lineup_history("basketball_nba", days=1)
+            >>> for c in h["changes"]:
+            ...     print(c["changed_at"], c["player_name"], c["old_role"], "->", c["new_role"])
+        """
+        params: dict = {"days": days}
+        if player:
+            params["player"] = player
+        if event_id is not None:
+            params["event_id"] = event_id
+        return self._request("GET", f"/sports/{sport}/lineups/history", params=params)
+
     def get_referees(
         self,
         sport: str,
@@ -2184,7 +2261,7 @@ class PropLine:
                 Valid values: "line_movement", "resolution", "steam",
                 "market_suspended", "ev", "line_added", "line_pulled",
                 "availability", "stat_update", "play", "game_state",
-                "injury", "bet_settled", "bet_regraded".
+                "injury", "lineup", "bet_settled", "bet_regraded".
                 ``bet_settled`` / ``bet_regraded`` carry the result of a
                 bet registered with :meth:`track_bets` (``bet_id``, ``ref``,
                 ``result``, ``payout``, ``profit``, ``legs``; a regrade

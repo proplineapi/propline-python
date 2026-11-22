@@ -416,6 +416,23 @@ for b in r["books"]:
           f"margin {b['margin_pct']:.2f}%  ({b['props']:,} props)")
 ```
 
+### Starting lineups (free)
+
+Projected and confirmed NBA starting lineups, plus every change with a
+timestamp (history starts 2026-11-22). Read every 60 seconds.
+
+```python
+r = client.get_lineups("basketball_nba", team="BOS")
+for g in r["games"]:
+    for t in g["teams"]:
+        starters = [p["player_name"] for p in t["players"] if p["role"] == "starter"]
+        print(t["team_abbr"], t["status"], starters)
+
+h = client.get_lineup_history("basketball_nba", days=1)
+for c in h["changes"]:
+    print(c["changed_at"], c["player_name"], c["old_role"], "->", c["new_role"])
+```
+
 ### Injury reports (free)
 
 Current injury report for NFL, NCAAF, NBA, WNBA, NHL and MLB, plus every

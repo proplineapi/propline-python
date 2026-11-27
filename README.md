@@ -451,6 +451,28 @@ for c in h["changes"]:
     print(c["changed_at"], c["player_name"], c["old_status"], "->", c["new_status"])
 ```
 
+NBA rows also carry the NBA's own official injury report: `official_status`
+(Out, Doubtful, Questionable, Probable, Available), `official_reason`,
+`official_report_at` and `official_game_at`. `fantasy_status` is ESPN's
+OUT/GTD/OFS. History rows carry `change_type` ("espn" or "official").
+
+### DraftKings betting splits (free)
+
+Share of DraftKings Sportsbook's own customers' money (`handle_pct`) and bet
+count (`bets_pct`) on each side of the main game lines. DraftKings customers
+only, not the whole market.
+
+```python
+r = client.get_splits("football_nfl", market="spread")
+for g in r["games"]:
+    for s in g["markets"].get("spread", []):
+        print(g["away_team"], "@", g["home_team"], s["selection"], s["handle_pct"], s["bets_pct"])
+
+h = client.get_split_history("football_nfl", event_id=12345)
+for c in h["changes"]:
+    print(c["changed_at"], c["market"], c["selection"], c["handle_pct"], c["bets_pct"])
+```
+
 ### Referee card stats (free)
 
 Card counts per referee, and each referee's matches with per-team cards.

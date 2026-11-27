@@ -1967,8 +1967,19 @@ class PropLine:
             Dict with sport, count and players (list of {player_name,
             player_id, espn_athlete_id, team, team_abbr, position, status,
             status_code, injury_type, body_part, detail, side,
-            expected_return, status_since, source_updated_at}).
+            expected_return, status_since, source_updated_at, source,
+            fantasy_status, status_source, official_status, official_reason,
+            official_report_at, official_game_at}).
             ``status_since`` is when the current status began.
+            ``fantasy_status`` is ESPN's OUT/GTD/OFS (or None).
+            ``status_source`` is "espn" or "nba_official". NBA rows carry
+            the NBA's own official injury report designation in
+            ``official_status`` (Out, Doubtful, Questionable, Probable,
+            Available; None elsewhere), with ``official_reason``,
+            ``official_report_at`` (the report's own timestamp) and
+            ``official_game_at`` (tip-off the designation is for).
+            ``source`` is "nba_official" for a player only the NBA's
+            report lists (``espn_athlete_id`` is None then).
 
         Example:
             >>> r = client.get_injuries("football_nfl", status="out,questionable")
@@ -2000,8 +2011,11 @@ class PropLine:
         Returns:
             Dict with sport, days, count, truncated and changes (list of
             {player_name, player_id, espn_athlete_id, team, old_status,
-            new_status, new_status_code, changed_at, source_updated_at}).
+            new_status, new_status_code, changed_at, source_updated_at,
+            change_type, official_report_at}).
             ``new_status`` is None when the player came off the report.
+            ``change_type`` is "espn" or "official" (an NBA official
+            report change; ``official_report_at`` is that report's time).
             Capped at 2,000 rows (``truncated``).
 
         Example:
@@ -2093,6 +2107,79 @@ class PropLine:
         if event_id is not None:
             params["event_id"] = event_id
         return self._request("GET", f"/sports/{sport}/lineups/history", params=params)
+
+    def get_splits(
+        self,
+        sport: str,
+        event_id: int | None = None,
+        market: str | None = None,
+    ) -> dict:
+        """
+        DraftKings betting splits (free tier): the share of DraftKings
+        Sportsbook's own customers' money (``handle_pct``) and bet count
+        (``bets_pct``) on each side of the main game lines. This is
+        DraftKings' customers only, not the whole market.
+
+        Args:
+            sport: football_nfl, basketball_nba, hockey_nhl, baseball_mlb,
+                basketball_wnba, mma_ufc, football_ncaaf, basketball_ncaab,
+                basketball_ncaaw, soccer_epl, soccer_uefa_champions_league,
+                soccer_uefa_europa_league or soccer_mls.
+            event_id: Optional PropLine event id.
+            market: Optional "moneyline", "spread" or "total".
+
+        Returns:
+            Dict with sport, source ("draftkings"), note, source_updated_at,
+            fetched_at, count and games (list of {event_id, dk_event_id,
+            home_team, away_team, commence_time, markets}). ``event_id`` is
+            the PropLine id (None if unmatched). ``markets`` maps moneyline /
+            spread / total to lists of {selection, side, point, price,
+            handle_pct, bets_pct, last_change_at}; ``side`` is home, away,
+            draw, over, under or None; ``price`` is American odds.
+
+        Example:
+            >>> r = client.get_splits("football_nfl", market="spread")
+            >>> for g in r["games"]:
+            ...     for s in g["markets"].get("spread", []):
+            ...         print(g["away_team"], "@", g["home_team"], s["selection"],
+            ...               s["handle_pct"], s["bets_pct"])
+        """
+        params: dict = {}
+        if event_id is not None:
+            params["event_id"] = event_id
+        if market:
+            params["market"] = market
+        return self._request("GET", f"/sports/{sport}/splits", params=params)
+
+    def get_split_history(
+        self,
+        sport: str,
+        event_id: int | None = None,
+        dk_event_id: str | int | None = None,
+    ) -> dict:
+        """
+        Every recorded change in DraftKings' customers' handle % and bets %
+        for one game, oldest first (free tier). Pass ``event_id`` or
+        ``dk_event_id`` (one is required).
+
+        Returns:
+            Dict with sport, source, note, count, truncated and changes
+            (list of {event_id, dk_event_id, market, selection, side, point,
+            price, handle_pct, bets_pct, changed_at, source_updated_at}).
+
+        Example:
+            >>> h = client.get_split_history("football_nfl", event_id=12345)
+            >>> for c in h["changes"]:
+            ...     print(c["changed_at"], c["market"], c["selection"], c["handle_pct"], c["bets_pct"])
+        """
+        if event_id is None and dk_event_id is None:
+            raise ValueError("get_split_history needs event_id or dk_event_id")
+        params: dict = {}
+        if event_id is not None:
+            params["event_id"] = event_id
+        if dk_event_id is not None:
+            params["dk_event_id"] = dk_event_id
+        return self._request("GET", f"/sports/{sport}/splits/history", params=params)
 
     def get_referees(
         self,
